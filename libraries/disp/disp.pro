@@ -107,6 +107,7 @@ SOURCES += \
     viewers/fwdsettingsview.cpp \
     viewers/helpers/scalecontrol.cpp \
     viewers/progressview.cpp \
+    viewers/rtspectrumviewsettings.cpp \
     viewers/spectrumview.cpp \
     viewers/modalityselectionview.cpp \
     viewers/butterflyview.cpp \
@@ -168,6 +169,7 @@ HEADERS += \
     viewers/fwdsettingsview.h \
     viewers/helpers/scalecontrol.h \
     viewers/progressview.h \
+    viewers/rtspectrumviewsettings.h \
     viewers/spectrumview.h \
     viewers/modalityselectionview.h \
     viewers/butterflyview.h \
@@ -232,6 +234,8 @@ FORMS += \
     viewers/formfiles/coregsettingsview.ui \
     viewers/formfiles/fwdsettingsview.ui \
     viewers/formfiles/progressview.ui \
+    viewers/formfiles/fwdsettingsview.ui \
+    viewers/formfiles/rtspectrumviewsettings.ui \
     viewers/formfiles/spharasettingsview.ui \
     viewers/formfiles/fiffrawviewsettings.ui \
     viewers/formfiles/triggerdetectionview.ui \
