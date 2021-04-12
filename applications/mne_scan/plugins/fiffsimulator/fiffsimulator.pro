@@ -37,27 +37,18 @@ include(../../../../mne-cpp.pri)
 
 TEMPLATE = lib
 
-CONFIG += skip_target_version_ext
+QT += widgets network
 
-CONFIG += plugin
+CONFIG += skip_target_version_ext plugin
 
 DEFINES += FIFFSIMULATOR_PLUGIN
 
-QT += widgets network
+DESTDIR = $${MNE_BINARY_DIR}/mne_scan_plugins
 
 TARGET = fiffsimulator
 CONFIG(debug, debug|release) {
     TARGET = $$join(TARGET,,,d)
 }
-
-contains(MNECPP_CONFIG, static) {
-    CONFIG += staticlib
-    DEFINES += STATICBUILD
-} else {
-    CONFIG += shared
-}
-
-DESTDIR = $${MNE_BINARY_DIR}/mne_scan_plugins
 
 contains(MNECPP_CONFIG, static) {
     CONFIG += staticlib
@@ -99,14 +90,6 @@ HEADERS += \
 FORMS += \
     FormFiles/fiffsimulatorsetup.ui
 
-RESOURCE_FILES +=\
-    $${ROOT_DIR}/resources/mne_scan/plugins/FiffSimulator/inputFile.txt \
-    $${ROOT_DIR}/resources/mne_scan/plugins/FiffSimulator/VectorViewSimLayout.xml \
-
-# Copy resource files from repository to bin resource folder
-COPY_CMD = $$copyResources($${RESOURCE_FILES})
-QMAKE_POST_LINK += $${COPY_CMD}
-
 INCLUDEPATH += $${EIGEN_INCLUDE_DIR}
 INCLUDEPATH += $${MNE_INCLUDE_DIR}
 INCLUDEPATH += $${MNE_SCAN_INCLUDE_DIR}
@@ -117,14 +100,7 @@ RESOURCES += \
 OTHER_FILES += \
     fiffsimulator.json
 
-# Put generated form headers into the origin --> cause other src is pointing at them
-UI_DIR = $${PWD}
-
-# suppress visibility warnings
-unix: QMAKE_CXXFLAGS += -Wno-attributes
-
 unix:!macx {
-    # Unix
     QMAKE_RPATHDIR += $ORIGIN/../../lib
 }
 

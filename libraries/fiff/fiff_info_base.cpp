@@ -66,13 +66,11 @@ FiffInfoBase::FiffInfoBase(const FiffInfoBase& p_FiffInfoBase)
 , bads(p_FiffInfoBase.bads)
 , meas_id(FiffId(p_FiffInfoBase.meas_id))
 , nchan(p_FiffInfoBase.nchan)
+, chs(p_FiffInfoBase.chs)
 , ch_names(p_FiffInfoBase.ch_names)
 , dev_head_t(p_FiffInfoBase.dev_head_t)
 , ctf_head_t(p_FiffInfoBase.ctf_head_t)
 {
-    qint32 i;
-    for(i = 0; i < p_FiffInfoBase.chs.size(); ++i)
-        chs.append(p_FiffInfoBase.chs[i]);
 }
 
 //=============================================================================================================
@@ -244,3 +242,78 @@ FiffInfoBase FiffInfoBase::pick_info(const RowVectorXi* sel) const
 
     return res;
 }
+//=============================================================================================================
+
+QStringList FiffInfoBase::get_channel_types()
+{
+    QStringList lChannelTypes;
+
+    for(int i = 0; i < chs.size(); ++i)
+    {
+        switch(chs.at(i).kind) {
+            case FIFFV_MEG_CH: {
+                if( chs.at(i).unit == FIFF_UNIT_T_M ) { //Gradiometers
+                    if(!lChannelTypes.contains("grad")) {
+                        lChannelTypes << "grad";
+                    }
+                } else if( chs.at(i).unit == FIFF_UNIT_T ) { //Magnetometers
+                    if(!lChannelTypes.contains("mag")) {
+                        lChannelTypes << "mag";
+                    }
+                }
+                break;
+            }
+
+            case FIFFV_REF_MEG_CH: {
+                if(!lChannelTypes.contains("ref_meg")) {
+                    lChannelTypes << "ref_meg";
+                }
+                break;
+            }
+
+            case FIFFV_EEG_CH: { //EEG Channels
+                if(!lChannelTypes.contains("eeg")) {
+                    lChannelTypes << "eeg";
+                }
+                break;
+            }
+
+            case FIFFV_ECG_CH: { //ECG Channels
+                if(!lChannelTypes.contains("ecg")) {
+                    lChannelTypes << "ecg";
+                }
+                break;
+            }
+            case FIFFV_EMG_CH: { //EMG Channels
+                if(!lChannelTypes.contains("emg")) {
+                    lChannelTypes << "emg";
+                }
+                break;
+            }
+            case FIFFV_EOG_CH: { //EOG Channels
+                if(!lChannelTypes.contains("eog")) {
+                    lChannelTypes << "eog";
+                }
+                break;
+            }
+
+            case FIFFV_STIM_CH: { //STIM Channels
+                if(!lChannelTypes.contains("stim")) {
+                    lChannelTypes << "stim";
+                }
+                break;
+            }
+
+            case FIFFV_MISC_CH: { //MISC Channels
+                if(!lChannelTypes.contains("misc")) {
+                    lChannelTypes << "misc";
+                }
+                break;
+            }
+        }
+    }
+
+    return lChannelTypes;
+}
+
+

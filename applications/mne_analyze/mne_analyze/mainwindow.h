@@ -158,11 +158,19 @@ signals:
 
     //=========================================================================================================
     /**
-     * Signal emmited whenever the gui modes changed
+     * Signal emmited whenever the gui modes changes
      *
      * @param [in] mode       the new gui mode
      */
     void guiModeChanged(DISPLIB::AbstractView::GuiMode mode);
+
+    //=========================================================================================================
+    /**
+     * Signal emmited whenever the gui style changes
+     *
+     * @param [in] style       the new gui style
+     */
+    void guiStyleChanged(DISPLIB::AbstractView::StyleMode style);
 
 private:
     //=========================================================================================================
@@ -177,7 +185,7 @@ private:
      *
      * @param [in] sStyle   The new qss style.
      */
-    void onStyleChanged(const QString& sStyle);
+    void onStyleChanged();
 
     //=========================================================================================================
     /**
@@ -191,6 +199,13 @@ private:
      */
     void createLogDockWindow();
 
+    //=========================================================================================================
+    /**
+     * Setter method for CurrentStyle member variable.
+     */
+    void setCurrentStyle(const QString& style);
+
+    //=========================================================================================================
     /**< Creates all actions for user interface of MainWindow class. */
     void createPluginMenus(QSharedPointer<ANSHAREDLIB::PluginManager> pPluginManager);          /**< Creates all menus for user interface of MainWindow class. */
     void createPluginControls(QSharedPointer<ANSHAREDLIB::PluginManager> pPluginManager);    /**< Creates all dock windows for user interface of MainWindow class. */
@@ -212,6 +227,7 @@ private:
     // MainWindow menus
     QPointer<QMenu>                     m_pMenuFile;                /**< Holds the file menu.*/
     QPointer<QMenu>                     m_pMenuView;                /**< Holds the view menu.*/
+    QPointer<QMenu>                     m_pMenuControl;             /**< Holds the control menu */
     QPointer<QMenu>                     m_pMenuAppearance;          /**< Holds the appearance menu.*/
     QPointer<QMenu>                     m_pMenuHelp;                /**< Holds the help menu.*/
 

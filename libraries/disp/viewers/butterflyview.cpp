@@ -70,7 +70,7 @@ ButterflyView::ButterflyView(const QString& sSettingsPath,
                              QWidget *parent,
                              Qt::WindowFlags f)
 :
-#if !defined(NO_OPENGL)
+#if !defined(NO_QOPENGLWIDGET)
   QOpenGLWidget(parent, f)
 #else
   QWidget(parent, f)
@@ -106,7 +106,7 @@ ButterflyView::~ButterflyView()
 
 void ButterflyView::updateOpenGLViewport()
 {
-#if !defined(NO_OPENGL)
+#if !defined(NO_QOPENGLWIDGET)
     // Activate anti aliasing
     initializeGL();
 #endif
@@ -119,7 +119,7 @@ void ButterflyView::setEvokedSetModel(QSharedPointer<EvokedSetModel> model)
     m_pEvokedSetModel = model;
 
     connect(m_pEvokedSetModel.data(), &EvokedSetModel::dataChanged,
-            this, &ButterflyView::dataUpdate);
+            this, &ButterflyView::dataUpdate, Qt::UniqueConnection);
 }
 
 //=============================================================================================================
@@ -283,6 +283,19 @@ void ButterflyView::showSelectedChannels(const QList<int> selectedChannelsIndexe
 
 //=============================================================================================================
 
+void ButterflyView::showAllChannels()
+{
+    if (m_pEvokedSetModel) {
+        QList<int> lAllChannels;
+        for(int i = 0; i < m_pEvokedSetModel->rowCount(); i++) {
+            lAllChannels.append(i);
+        }
+        setSelectedChannels(lAllChannels);
+    }
+}
+
+//=============================================================================================================
+
 void ButterflyView::saveSettings()
 {
     if(m_sSettingsPath.isEmpty()) {
@@ -307,7 +320,7 @@ void ButterflyView::loadSettings()
 
 //=============================================================================================================
 
-#if !defined(NO_OPENGL)
+#if !defined(NO_QOPENGLWIDGET)
     void ButterflyView::paintGL()
 #else
     void ButterflyView::paintEvent(QPaintEvent *event)
@@ -479,7 +492,7 @@ void ButterflyView::loadSettings()
         }
     }
 
-#if !defined(NO_OPENGL)
+#if !defined(NO_QOPENGLWIDGET)
     return QOpenGLWidget::paintGL();
 #else
     return QWidget::paintEvent(event);
@@ -593,4 +606,18 @@ void ButterflyView::createPlotPath(qint32 row, QPainter& painter) const
             painter.drawPath(path);
         }
     }
+}
+
+//=============================================================================================================
+
+QSharedPointer<EvokedSetModel> ButterflyView::getEvokedSetModel()
+{
+    return m_pEvokedSetModel;
+}
+
+//=============================================================================================================
+
+void ButterflyView::clearView()
+{
+    setEvokedSetModel(Q_NULLPTR);
 }

@@ -58,6 +58,7 @@
 #include <QMenu>
 #include <QMessageBox>
 #include <QInputDialog>
+#include <QtConcurrent/QtConcurrent>
 
 //=============================================================================================================
 // Eigen INCLUDES
@@ -73,7 +74,6 @@ AnnotationSettingsView::AnnotationSettingsView()
 , m_iCheckState(0)
 , m_iLastSampClicked(0)
 , m_pAnnModel(Q_NULLPTR)
-, m_pFiffInfo(Q_NULLPTR)
 , m_pFiffRawModel(Q_NULLPTR)
 , m_pColordialog(new QColorDialog(this))
 {
@@ -96,6 +96,7 @@ AnnotationSettingsView::AnnotationSettingsView()
                                                                                                            Q_NULLPTR,
                                                                                                            Qt::Window));
     m_pTriggerDetectView->setProcessingMode(DISPLIB::AbstractView::ProcessingMode::Offline);
+    m_pTriggerDetectView->setWindowFlag(Qt::WindowStaysOnTopHint);
 }
 
 //=============================================================================================================
@@ -157,14 +158,6 @@ void AnnotationSettingsView::initGUIFunctionality()
     connect(m_pUi->m_pushButton_addEventType, &QPushButton::clicked,
             this, &AnnotationSettingsView::addNewAnnotationType, Qt::UniqueConnection);
 
-    //Save button
-    connect(m_pUi->m_pushButtonSave, &QPushButton::clicked,
-            this, &AnnotationSettingsView::onSaveButton, Qt::UniqueConnection);
-
-    //Adding Events
-    connect(m_pAnnModel.data(), &ANSHAREDLIB::AnnotationModel::addNewAnnotation,
-            this, &AnnotationSettingsView::addAnnotationToModel, Qt::UniqueConnection);
-
     //Switching groups
     connect(m_pUi->m_listWidget_groupListWidget->selectionModel(), &QItemSelectionModel::selectionChanged,
             this, &AnnotationSettingsView::groupChanged, Qt::UniqueConnection);
@@ -185,6 +178,9 @@ void AnnotationSettingsView::initGUIFunctionality()
 
     connect(m_pTriggerDetectView.data(), &DISPLIB::TriggerDetectionView::detectTriggers,
             this, &AnnotationSettingsView::onDetectTriggers, Qt::UniqueConnection);
+
+    connect(&m_FutureWatcher, &QFutureWatcher<QMap<double,QList<int>>>::finished,
+            this, &AnnotationSettingsView::createGroupsFromTriggers, Qt::UniqueConnection);
 }
 
 //=============================================================================================================
@@ -211,7 +207,7 @@ void AnnotationSettingsView::updateComboBox(const QString &currentAnnotationType
 
 //=============================================================================================================
 
-void AnnotationSettingsView::addAnnotationToModel()
+void AnnotationSettingsView::addAnnotationToModel(int iSamplePos)
 {
     if(!(m_pAnnModel->getHubSize())){
         newUserGroup("User Events",
@@ -219,6 +215,8 @@ void AnnotationSettingsView::addAnnotationToModel()
                      true);
         m_pUi->m_listWidget_groupListWidget->setCurrentRow(0);
     }
+
+    m_pAnnModel->setSamplePos(iSamplePos);
 
     m_pAnnModel->insertRow(0, QModelIndex());
     emit triggerRedraw();
@@ -315,8 +313,6 @@ void AnnotationSettingsView::disconnectFromModel()
             this, &AnnotationSettingsView::updateComboBox);
     disconnect(m_pUi->m_pushButton_addEventType, &QPushButton::clicked,
             this, &AnnotationSettingsView::addNewAnnotationType);
-    disconnect(m_pAnnModel.data(), &ANSHAREDLIB::AnnotationModel::addNewAnnotation,
-            this, &AnnotationSettingsView::addAnnotationToModel);
     disconnect(m_pUi->m_listWidget_groupListWidget->selectionModel(), &QItemSelectionModel::selectionChanged,
             this, &AnnotationSettingsView::groupChanged);
     disconnect(m_pUi->m_checkBox_showAll, &QCheckBox::stateChanged,
@@ -364,7 +360,6 @@ void AnnotationSettingsView::onSaveButton()
     if (fileName.isEmpty()) {
         return;
     }
-    qInfo() << "AnnotationSettingsView::onSaveButton";
 
     m_pAnnModel->saveToFile(fileName);
     #endif
@@ -620,24 +615,50 @@ void AnnotationSettingsView::initTriggerDetect(const QSharedPointer<FIFFLIB::Fif
 void AnnotationSettingsView::onDetectTriggers(const QString &sChannelName,
                                               double dThreshold)
 {
+    if (!m_pFiffRawModel)
+        qWarning() << "[AnnotationSettingsView::onDetectTriggers] No Fiff Raw Model selected for trigger detection.";
+
+    if(m_FutureWatcher.isRunning()){
+        return;
+    }
+
+    emit loadingStart("Detecting triggers...");
+
+    m_Future = QtConcurrent::run(this,
+                                 &AnnotationSettingsView::detectTriggerCalculations,
+                                 sChannelName,
+                                 dThreshold,
+                                 *m_pFiffRawModel->getFiffInfo(),
+                                 *this->m_pFiffRawModel->getFiffIO()->m_qlistRaw.first().data());
+    m_FutureWatcher.setFuture(m_Future);
+
+}
+
+//=============================================================================================================
+
+QMap<double,QList<int>> AnnotationSettingsView::detectTriggerCalculations(const QString& sChannelName,
+                                                                          double dThreshold,
+                                                                          FIFFLIB::FiffInfo fiffInfo,
+                                                                          FIFFLIB::FiffRawData fiffRaw)
+{
     int iCurrentTriggerChIndex = 9999;
 
-    for(int i = 0; i < m_pFiffInfo->chs.size(); ++i) {
-        if(m_pFiffInfo->chs[i].ch_name == sChannelName) {
+    for(int i = 0; i < fiffInfo.chs.size(); ++i) {
+        if(fiffInfo.chs[i].ch_name == sChannelName) {
             iCurrentTriggerChIndex = i;
             break;
         }
     }
 
     if(iCurrentTriggerChIndex == 9999){
-        qWarning() << "[AnnotationSettingsView::onDetectTriggers] Channel Index not valid";
-        return;
+        qWarning() << "[AnnotationSettingsView::onDetectTriggers] Channel Index not valid";\
+        QMap<double,QList<int>> map;
+        return map;
     }
 
     Eigen::MatrixXd mSampleData, mSampleTimes;
 
-    FIFFLIB::FiffRawData* pFiffRaw = this->m_pFiffRawModel->getFiffIO()->m_qlistRaw.first().data();
-    pFiffRaw->read_raw_segment(mSampleData,
+    fiffRaw.read_raw_segment(mSampleData,
                                mSampleTimes);
 
     QList<QPair<int,double>> detectedTriggerSamples = RTPROCESSINGLIB::detectTriggerFlanksMax(mSampleData,
@@ -652,39 +673,21 @@ void AnnotationSettingsView::onDetectTriggers(const QString &sChannelName,
         mEventsinTypes[pair.second].append(pair.first);
     }
 
-    QList<double> keyList = mEventsinTypes.keys();
-    int iFirstSample = m_pFiffRawModel->absoluteFirstSample();
-
-    QColor colors[10] = {QColor("cyan"), QColor("magenta"), QColor("red"),
-                          QColor("darkRed"), QColor("darkCyan"), QColor("darkMagenta"),
-                          QColor("green"), QColor("darkGreen"), QColor("yellow"),
-                          QColor("blue")};
-
-    for (int i = 0; i < keyList.size(); i++){
-        newStimGroup(sChannelName, static_cast<int>(keyList[i]), colors[i % 10]);
-        groupChanged();
-        for (int j : mEventsinTypes[keyList[i]]){
-            m_pAnnModel->setSamplePos(j + iFirstSample);
-            m_pAnnModel->insertRow(0, QModelIndex());
-        }
-    }
-    emit triggerRedraw();
-    emit groupsUpdated();
-
+    return mEventsinTypes;
 }
 
 //=============================================================================================================
 
+
 void AnnotationSettingsView::onNewFiffRawViewModel(QSharedPointer<ANSHAREDLIB::FiffRawViewModel> pFiffRawModel)
 {
     m_pFiffRawModel = pFiffRawModel;
-    m_pFiffInfo = m_pFiffRawModel->getFiffInfo();
 
     passFiffParams(pFiffRawModel->absoluteFirstSample(),
                    pFiffRawModel->absoluteLastSample(),
                    pFiffRawModel->getFiffInfo()->sfreq);
 
-    initTriggerDetect(m_pFiffInfo);
+    initTriggerDetect(m_pFiffRawModel->getFiffInfo());
 }
 
 //=============================================================================================================
@@ -707,4 +710,48 @@ bool AnnotationSettingsView::newStimGroup(const QString &sName,
     emit m_pUi->m_listWidget_groupListWidget->setCurrentItem(newItem);
 
     return true;
+}
+
+//=============================================================================================================
+
+void AnnotationSettingsView::createGroupsFromTriggers()
+{
+    QMap<double,QList<int>> mEventGroupMap = m_Future.result();
+
+    QList<double> keyList = mEventGroupMap.keys();
+    int iFirstSample = m_pFiffRawModel->absoluteFirstSample();
+
+    QColor colors[10] = {QColor("cyan"), QColor("magenta"), QColor("red"),
+                          QColor("darkRed"), QColor("darkCyan"), QColor("darkMagenta"),
+                          QColor("green"), QColor("darkGreen"), QColor("yellow"),
+                          QColor("blue")};
+
+    for (int i = 0; i < keyList.size(); i++){
+        if ((m_pUi->m_listWidget_groupListWidget->findItems(m_pTriggerDetectView->getSelectedStimChannel()+ "_" + QString::number(static_cast<int>(keyList[i])), Qt::MatchExactly).isEmpty())){
+            newStimGroup(m_pTriggerDetectView->getSelectedStimChannel(),
+                         static_cast<int>(keyList[i]),
+                         colors[i % 10]);
+            groupChanged();
+            for (int j : mEventGroupMap[keyList[i]]){
+                m_pAnnModel->setSamplePos(j + iFirstSample);
+                m_pAnnModel->insertRow(0, QModelIndex());
+            }
+        }
+    }
+
+    emit triggerRedraw();
+    emit groupsUpdated();
+    emit loadingEnd("Detecting triggers...");
+}
+
+//=============================================================================================================
+
+void AnnotationSettingsView::clearView(QSharedPointer<ANSHAREDLIB::AbstractModel> pRemovedModel)
+{
+    if (qSharedPointerCast<ANSHAREDLIB::AbstractModel>(m_pAnnModel) == pRemovedModel){
+        disconnectFromModel();
+        reset();
+    } else if (qSharedPointerCast<ANSHAREDLIB::AbstractModel>(m_pFiffRawModel) == pRemovedModel){
+        m_pFiffRawModel = Q_NULLPTR;
+    }
 }

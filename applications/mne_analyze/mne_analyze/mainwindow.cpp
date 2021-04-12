@@ -41,7 +41,7 @@
 #include "info.h"
 #include "mainwindow.h"
 
-#include <anShared/Interfaces/IPlugin.h>
+#include <anShared/Plugins/abstractplugin.h>
 #include <anShared/Management/pluginmanager.h>
 #include <anShared/Management/statusbar.h>
 
@@ -101,7 +101,9 @@ MainWindow::MainWindow(QSharedPointer<ANSHAREDLIB::PluginManager> pPluginManager
         qWarning() << "[MainWindow::MainWindow] Plugin manager is nullptr!";
     }
 
-    this->setStatusBar(new StatusBar());
+    StatusBar* statusBar = new StatusBar(this);
+
+    this->setStatusBar(statusBar);
 
     //Load application icon for linux builds only, mac and win executables have built in icons from .pro file
 #ifdef __linux__
@@ -118,6 +120,19 @@ MainWindow::MainWindow(QSharedPointer<ANSHAREDLIB::PluginManager> pPluginManager
 
 MainWindow::~MainWindow()
 {
+    menuBar()->clear();
+
+    delete m_pActionExit;
+    delete m_pActionAbout;
+    delete m_pActionResearchMode;
+    delete m_pActionClinicalMode;
+    delete m_pActionDarkMode;
+
+    delete m_pMenuFile;
+    delete m_pMenuView;
+    delete m_pMenuControl;
+    delete m_pMenuAppearance;
+    delete m_pMenuHelp;
 }
 
 //=============================================================================================================
@@ -188,13 +203,13 @@ void MainWindow::saveSettings()
     }
 
     QSettings settings("MNECPP");
-
-    settings.beginGroup(m_sSettingsPath + "/layout");
+    settings.beginGroup(m_sSettingsPath);
+    settings.setValue("already_run","yes");
+    settings.setValue("styleMode", m_sCurrentStyle);
+    settings.beginGroup("layout");
     settings.setValue("geometry", saveGeometry());
     settings.setValue("state", saveState());
     settings.endGroup();
-
-    settings.setValue(m_sSettingsPath + QString("/styleMode"), m_sCurrentStyle);
 }
 
 //=============================================================================================================
@@ -207,19 +222,28 @@ void MainWindow::loadSettings()
 
     QSettings settings("MNECPP");
 
-    settings.beginGroup(m_sSettingsPath + "/layout");
-    restoreGeometry(settings.value("geometry").toByteArray());
-    restoreState(settings.value("state").toByteArray());
-    settings.endGroup();
+    settings.beginGroup(m_sSettingsPath);
 
-    m_sCurrentStyle = settings.value(m_sSettingsPath + QString("/styleMode"), "default").toString();
-    if(m_sCurrentStyle == "dark") {
-        m_pActionDarkMode->setChecked(true);
+    if(settings.contains("already_run"))
+    {
+        settings.beginGroup("layout");
+        restoreGeometry(settings.value("geometry").toByteArray());
+        restoreState(settings.value("state").toByteArray());
+        settings.endGroup();
+        setCurrentStyle(settings.value("styleMode", m_sCurrentStyle).toString());
     } else {
-        m_pActionDarkMode->setChecked(false);
+        setCurrentStyle(m_sCurrentStyle);
     }
+    settings.endGroup();
+}
 
-    onStyleChanged(m_sCurrentStyle);
+//=============================================================================================================
+
+void MainWindow::setCurrentStyle(const QString& sStyle)
+{
+    m_sCurrentStyle = sStyle;
+
+    onStyleChanged();
 }
 
 //=============================================================================================================
@@ -239,18 +263,24 @@ void MainWindow::createActions()
 
 //=============================================================================================================
 
-void MainWindow::onStyleChanged(const QString& sStyle)
+void MainWindow::onStyleChanged()
 {
+    if(m_sCurrentStyle == "dark") {
+        m_pActionDarkMode->setChecked(true);
+    } else {
+        m_pActionDarkMode->setChecked(false);
+    }
+
     if(QApplication *pApp = qobject_cast<QApplication *>(QApplication::instance())) {
-        if(sStyle == "default") {
-            m_sCurrentStyle = "default";
+        if(m_sCurrentStyle == "default") {
             pApp->setStyleSheet("");
-        } else if (sStyle == "dark") {
-            m_sCurrentStyle = "dark";
+            emit guiStyleChanged(DISPLIB::AbstractView::StyleMode::Default);
+        } else if (m_sCurrentStyle == "dark") {
             QFile file(":/dark.qss");
             file.open(QFile::ReadOnly);
             QTextStream stream(&file);
             pApp->setStyleSheet(stream.readAll());
+            emit guiStyleChanged(DISPLIB::AbstractView::StyleMode::Dark);
         }
 
         // Set default font
@@ -299,12 +329,30 @@ void MainWindow::createLogDockWindow()
 
 void MainWindow::createPluginMenus(QSharedPointer<ANSHAREDLIB::PluginManager> pPluginManager)
 {
+    //(re)initialize all the menus
+    menuBar()->clear();
+
+    delete m_pActionExit;
+    delete m_pActionAbout;
+    delete m_pActionResearchMode;
+    delete m_pActionClinicalMode;
+    delete m_pActionDarkMode;
+
+    delete m_pMenuFile;
+    delete m_pMenuView;
+    delete m_pMenuControl;
+    delete m_pMenuAppearance;
+    delete m_pMenuHelp;
+
     // File menu
     m_pMenuFile = menuBar()->addMenu(tr("File"));
     m_pMenuFile->addAction(m_pActionExit);
 
     // View menu
     m_pMenuView = menuBar()->addMenu(tr("View"));
+
+    // Control menu
+    m_pMenuControl = menuBar()->addMenu(tr("Control"));
 
     //Appearance QMenu
     // Styles
@@ -317,7 +365,7 @@ void MainWindow::createPluginMenus(QSharedPointer<ANSHAREDLIB::PluginManager> pP
     pActionStyleGroup->addAction(pActionDefaultStyle);
     connect(pActionDefaultStyle, &QAction::triggered,
         [=]() {
-        onStyleChanged("default");
+        setCurrentStyle("default");
     });
 
     m_pActionDarkMode = new QAction("Dark");
@@ -327,7 +375,7 @@ void MainWindow::createPluginMenus(QSharedPointer<ANSHAREDLIB::PluginManager> pP
     pActionStyleGroup->addAction(m_pActionDarkMode);
     connect(m_pActionDarkMode.data(), &QAction::triggered,
         [=]() {
-        onStyleChanged("dark");
+        setCurrentStyle("dark");
     });
 
     // Modes
@@ -360,7 +408,7 @@ void MainWindow::createPluginMenus(QSharedPointer<ANSHAREDLIB::PluginManager> pP
     m_pMenuHelp->addAction(m_pActionAbout);
 
     // add plugins menus
-    for(IPlugin* pPlugin : pPluginManager->getPlugins()) {
+    for(AbstractPlugin* pPlugin : pPluginManager->getPlugins()) {
         pPlugin->setObjectName(pPlugin->getName());
         if(pPlugin) {
             if (QMenu* pMenu = pPlugin->getMenu()) {
@@ -394,18 +442,21 @@ void MainWindow::createPluginControls(QSharedPointer<ANSHAREDLIB::PluginManager>
     setDockOptions(QMainWindow::ForceTabbedDocks);
 
     //Add Plugin controls to the MainWindow
-    for(IPlugin* pPlugin : pPluginManager->getPlugins()) {
+    for(AbstractPlugin* pPlugin : pPluginManager->getPlugins()) {
         if(QDockWidget* pControl = pPlugin->getControl()) {
             addDockWidget(Qt::LeftDockWidgetArea, pControl);
             qInfo() << "[MainWindow::createPluginControls] Found and added dock widget for " << pPlugin->getName();
             QAction* pAction = pControl->toggleViewAction();
-            pAction->setText(pPlugin->getName()+" Controls");
-            m_pMenuView->addAction(pAction);
+            pAction->setText(pPlugin->getName());
+            m_pMenuControl->addAction(pAction);
             qInfo() << "[MainWindow::createPluginControls] Added" << pPlugin->getName() << "controls to View menu";
 
             // Connect plugin controls to GUI mode toggling
             connect(this, &MainWindow::guiModeChanged,
-                    pPlugin, &IPlugin::guiModeChanged);
+                    pPlugin, &AbstractPlugin::guiModeChanged);
+
+            connect(this, &MainWindow::guiStyleChanged,
+                    pPlugin, &AbstractPlugin::guiStyleChanged);
 
             // Disable floating and editable dock widgets, since the wasm QDockWidget version is buggy
             #ifdef WASMBUILD
@@ -431,7 +482,7 @@ void MainWindow::createPluginViews(QSharedPointer<PluginManager> pPluginManager)
     QString sCurPluginName;
 
     //Add Plugin views to the MultiView, which is the central widget
-    for(IPlugin* pPlugin : pPluginManager->getPlugins()) {
+    for(AbstractPlugin* pPlugin : pPluginManager->getPlugins()) {
         QWidget* pView = pPlugin->getView();
         if(pView) {
             sCurPluginName = pPlugin->getName();

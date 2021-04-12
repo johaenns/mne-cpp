@@ -50,12 +50,19 @@
 #include <QSharedPointer>
 #include <QStatusBar>
 #include <QLabel>
+#include <QStack>
+#include <QPointer>
 
 //=============================================================================================================
 // FORWARD DECLARATIONS
 //=============================================================================================================
 
 class QLabel;
+class QProgressBar;
+
+namespace DISPLIB {
+    class ProgressView;
+}
 
 //=============================================================================================================
 // DEFINE NAMESPACE ANSHAREDLIB
@@ -104,10 +111,7 @@ public:
      */
     void setMsgTimeout(int iTimeout);
 
-protected:
-
 private:
-
     //=========================================================================================================
     /**
      * This functions gets called when a new message is received from the event system.
@@ -116,9 +120,30 @@ private:
      */
     void onNewMessageReceived(const QSharedPointer<ANSHAREDLIB::Event> pEvent);
 
-    ANSHAREDLIB::Communicator *m_pCommunicator;         /**< Vector containing all plugins. */
+    //=========================================================================================================
+    /**
+     * Receives event when status bar is hovered over, shows hover widget if there are background processes
+     *
+     * @param [in] event    event of type QHoverEvent that holds mouse position
+     */
+    void enterEvent(QEvent* event);
 
-    int m_iMsgTimeout;                                  /**< Timeout of one message in milliseconds. */
+    //=========================================================================================================
+    /**
+     * Receives event when status bar is no longer hovered over, hides hover widget
+     *
+     * @param [in] event    event of type QHoverEvent that holds mouse position
+     */
+    void leaveEvent(QEvent* event);
+
+    ANSHAREDLIB::Communicator*          m_pCommunicator;            /**< Vector containing all plugins. */
+
+    int                                 m_iMsgTimeout;              /**< Timeout of one message in milliseconds. */
+
+    QStack<QString>                     m_LoadingStack;             /** Keeps the currently loading messages */
+
+    QPointer<QWidget>                   m_pHoverWidget;             /** Widget for showing all current loading messageswhen hovering over the loading bar */
+    QPointer<DISPLIB::ProgressView>     m_pProgressView;            /** Widget for showiung loading bar and loadoing message */
 };
 
 //=============================================================================================================

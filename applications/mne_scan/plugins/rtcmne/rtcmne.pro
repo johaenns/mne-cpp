@@ -37,27 +37,18 @@ include(../../../../mne-cpp.pri)
 
 TEMPLATE = lib
 
-CONFIG += skip_target_version_ext
+QT += core widgets concurrent
 
-CONFIG += plugin
+CONFIG += skip_target_version_ext plugin
 
 DEFINES += RTCMNE_PLUGIN
 
-QT += core widgets concurrent
+DESTDIR = $${MNE_BINARY_DIR}/mne_scan_plugins
 
 TARGET = rtcmne
 CONFIG(debug, debug|release) {
     TARGET = $$join(TARGET,,,d)
 }
-
-contains(MNECPP_CONFIG, static) {
-    CONFIG += staticlib
-    DEFINES += STATICBUILD
-} else {
-    CONFIG += shared
-}
-
-DESTDIR = $${MNE_BINARY_DIR}/mne_scan_plugins
 
 contains(MNECPP_CONFIG, static) {
     CONFIG += staticlib
@@ -116,14 +107,7 @@ RESOURCES += \
 
 OTHER_FILES += rtcmne.json
 
-# Put generated form headers into the origin --> cause other src is pointing at them
-UI_DIR = $$PWD
-
-# suppress visibility warnings
-unix: QMAKE_CXXFLAGS += -Wno-attributes
-
 unix:!macx {
-    # Unix
     QMAKE_RPATHDIR += $ORIGIN/../../lib
 }
 

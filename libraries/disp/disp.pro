@@ -46,6 +46,8 @@ qtHaveModule(charts): QT += charts
 
 DEFINES += DISP_LIBRARY
 
+DESTDIR = $${MNE_LIBRARY_DIR}
+
 TARGET = Disp
 TARGET = $$join(TARGET,,mnecpp,)
 CONFIG(debug, debug|release) {
@@ -56,12 +58,9 @@ contains(MNECPP_CONFIG, wasm) {
     DEFINES += WASMBUILD
 }
 
-contains(MNECPP_CONFIG, noOpenGL) {
-    DEFINES += NO_OPENGL
-    QT -= opengl
+contains(MNECPP_CONFIG, noQOpenGLWidget) {
+    DEFINES += NO_QOPENGLWIDGET
 }
-
-DESTDIR = $${MNE_LIBRARY_DIR}
 
 contains(MNECPP_CONFIG, static) {
     CONFIG += staticlib
@@ -99,9 +98,13 @@ SOURCES += \
     plots/helpers/colormap.cpp \
     viewers/abstractview.cpp \
     viewers/applytoview.cpp \
+    viewers/coregsettingsview.cpp \
+    viewers/dipolefitview.cpp \
     viewers/filterdesignview.cpp \
     viewers/averagelayoutview.cpp \
     viewers/fwdsettingsview.cpp \
+    viewers/helpers/scalecontrol.cpp \
+    viewers/progressview.cpp \
     viewers/spectrumview.cpp \
     viewers/modalityselectionview.cpp \
     viewers/butterflyview.cpp \
@@ -128,6 +131,7 @@ SOURCES += \
     viewers/multiview.cpp \
     viewers/hpisettingsview.cpp \
     viewers/covariancesettingsview.cpp \
+    viewers/bidsview.cpp \
     viewers/helpers/rtfiffrawviewmodel.cpp \
     viewers/helpers/rtfiffrawviewdelegate.cpp \
     viewers/helpers/evokedsetmodel.cpp \
@@ -142,6 +146,7 @@ SOURCES += \
     viewers/helpers/draggableframelesswidget.cpp \
     viewers/helpers/frequencyspectrumdelegate.cpp \
     viewers/helpers/frequencyspectrummodel.cpp \
+    viewers/helpers/bidsviewmodel.cpp \
 
 HEADERS += \
     disp_global.h \
@@ -152,9 +157,13 @@ HEADERS += \
     plots/helpers/colormap.h \
     viewers/abstractview.h \
     viewers/applytoview.h \
+    viewers/coregsettingsview.h \
+    viewers/dipolefitview.h \
     viewers/filterdesignview.h \
     viewers/averagelayoutview.h \
     viewers/fwdsettingsview.h \
+    viewers/helpers/scalecontrol.h \
+    viewers/progressview.h \
     viewers/spectrumview.h \
     viewers/modalityselectionview.h \
     viewers/butterflyview.h \
@@ -181,6 +190,7 @@ HEADERS += \
     viewers/multiview.h \
     viewers/hpisettingsview.h \
     viewers/covariancesettingsview.h \
+    viewers/bidsview.h \
     viewers/helpers/rtfiffrawviewdelegate.h \
     viewers/helpers/rtfiffrawviewmodel.h \
     viewers/helpers/evokedsetmodel.h \
@@ -195,6 +205,7 @@ HEADERS += \
     viewers/helpers/draggableframelesswidget.h \
     viewers/helpers/frequencyspectrumdelegate.h \
     viewers/helpers/frequencyspectrummodel.h \
+    viewers/helpers/bidsviewmodel.h \
 
 qtHaveModule(charts) {
     SOURCES += \
@@ -209,9 +220,12 @@ qtHaveModule(charts) {
 }
 
 FORMS += \
+    viewers/formfiles/dipolefitview.ui \
     viewers/formfiles/filterdesignview.ui \
     viewers/formfiles/channelselectionview.ui \
+    viewers/formfiles/coregsettingsview.ui \
     viewers/formfiles/fwdsettingsview.ui \
+    viewers/formfiles/progressview.ui \
     viewers/formfiles/spharasettingsview.ui \
     viewers/formfiles/fiffrawviewsettings.ui \
     viewers/formfiles/triggerdetectionview.ui \
@@ -224,34 +238,10 @@ FORMS += \
     viewers/formfiles/control3dview.ui \
     viewers/formfiles/hpisettingsview.ui \
     viewers/formfiles/scalingview.ui \
+    viewers/formfiles/scalecontrol.ui \
     viewers/formfiles/filtersettingsview.ui \
     viewers/formfiles/applytoview.ui \
-
-RESOURCE_FILES +=\
-    $${ROOT_DIR}/resources/general/default_filters/BP_1Hz_40Hz_Fs1kHz.txt \
-    $${ROOT_DIR}/resources/general/default_filters/BP_1Hz_70Hz_Fs1kHz.txt \
-    $${ROOT_DIR}/resources/general/default_filters/filter_default_template.txt \
-    $${ROOT_DIR}/resources/general/default_filters/NOTCH_50Hz_Fs1kHz.txt \
-    $${ROOT_DIR}/resources/general/default_filters/NOTCH_60Hz_Fs1kHz.txt \
-    $${ROOT_DIR}/resources/general/2DLayouts/babymeg-mag-inner-layer.lout \
-    $${ROOT_DIR}/resources/general/2DLayouts/babymeg-mag-outer-layer.lout \
-    $${ROOT_DIR}/resources/general/2DLayouts/babymeg-mag-ref.lout \
-    $${ROOT_DIR}/resources/general/2DLayouts/CTF-275.lout \
-    $${ROOT_DIR}/resources/general/2DLayouts/magnesWH3600.lout \
-    $${ROOT_DIR}/resources/general/2DLayouts/standard_waveguard64_duke.lout \
-    $${ROOT_DIR}/resources/general/2DLayouts/Vectorview-all.lout \
-    $${ROOT_DIR}/resources/general/2DLayouts/Vectorview-grad.lout \
-    $${ROOT_DIR}/resources/general/2DLayouts/Vectorview-mag.lout \
-    $${ROOT_DIR}/resources/general/selectionGroups/mne_browse_raw.sel \
-    $${ROOT_DIR}/resources/general/selectionGroups/mne_browse_raw_babyMEG.sel \
-    $${ROOT_DIR}/resources/general/selectionGroups/mne_browse_raw_CTF_275.sel \
-    $${ROOT_DIR}/resources/general/selectionGroups/mne_browse_raw_Magnes_3600WH.sel \
-    $${ROOT_DIR}/resources/general/selectionGroups/mne_browse_raw_vv.sel \
-    $${ROOT_DIR}/resources/general/selectionGroups/mne_browse_raw_vv_new.sel \
-
-# Copy resource files from repository to bin resource folder
-COPY_CMD = $$copyResources($${RESOURCE_FILES})
-QMAKE_POST_LINK += $${COPY_CMD}
+    viewers/formfiles/bidsview.ui \
 
 INCLUDEPATH += $${EIGEN_INCLUDE_DIR}
 INCLUDEPATH += $${MNE_INCLUDE_DIR}
@@ -268,14 +258,10 @@ contains(MNECPP_CONFIG, withCodeCov) {
 }
 
 win32:!contains(MNECPP_CONFIG, static) {
-    # Deploy/Copy library to bin folder manually (windeployqt only takes care of qt and system libraries)
-    EXTRA_ARGS =
-    DEPLOY_CMD = $$winDeployLibArgs($${TARGET},$${MNE_BINARY_DIR},$${MNE_LIBRARY_DIR},$${EXTRA_ARGS})
-    QMAKE_POST_LINK += $${DEPLOY_CMD}
+    QMAKE_POST_LINK += $$QMAKE_COPY $$shell_path($${MNE_LIBRARY_DIR}/$${TARGET}.dll) $${MNE_BINARY_DIR}
 }
 
 macx {
-    # Change install name of the library so we can use the @rpath when linking executables against it
     QMAKE_LFLAGS_SONAME = -Wl,-install_name,@rpath/
 }
 

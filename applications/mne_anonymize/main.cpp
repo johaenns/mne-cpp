@@ -50,7 +50,7 @@
 //=============================================================================================================
 // QT INCLUDES
 //=============================================================================================================
-
+#include <QDebug>
 //=============================================================================================================
 // FORWARD DECLARATIONS
 //=============================================================================================================
@@ -88,7 +88,8 @@ int main(int argc, char* argv[])
 
     qtApp->setOrganizationName("MNE-CPP Project");
     qtApp->setApplicationName("MNE Anonymize");
-    qtApp->setApplicationVersion("0.1.6");
+
+    qDebug() << "date: " << __DATE__;
 
     QScopedPointer<MNEANONYMIZE::SettingsControllerCl> controller(h->createController(qtApp->arguments()));
 

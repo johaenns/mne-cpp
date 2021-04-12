@@ -58,7 +58,7 @@
 #include <QDebug>
 #include <QGraphicsItem>
 #include <QSettings>
-#if !defined(NO_OPENGL)
+#if !defined(NO_QOPENGLWIDGET)
     #include <QOpenGLWidget>
 #endif
 
@@ -85,7 +85,7 @@ AverageLayoutView::AverageLayoutView(const QString& sSettingsPath,
 
     m_pAverageLayoutView = new QGraphicsView();
 
-#if !defined(NO_OPENGL)
+#if !defined(NO_QOPENGLWIDGET)
     m_pAverageLayoutView->setViewport(new QOpenGLWidget);
 #endif
 
@@ -116,7 +116,7 @@ AverageLayoutView::~AverageLayoutView()
 
 void AverageLayoutView::updateOpenGLViewport()
 {
-#if !defined(NO_OPENGL)
+#if !defined(NO_QOPENGLWIDGET)
     if(m_pAverageLayoutView) {
         m_pAverageLayoutView->setViewport(new QOpenGLWidget);
     }
@@ -132,10 +132,12 @@ void AverageLayoutView::setChannelInfoModel(QSharedPointer<ChannelInfoModel> &pC
 
 //=============================================================================================================
 
-void AverageLayoutView::setEvokedSetModel(QSharedPointer<EvokedSetModel> &pEvokedSetModel)
+void AverageLayoutView::setEvokedSetModel(QSharedPointer<EvokedSetModel> pEvokedSetModel)
 {
+    if (pEvokedSetModel){
     connect(pEvokedSetModel.data(), &EvokedSetModel::dataChanged,
-            this, &AverageLayoutView::updateData);
+            this, &AverageLayoutView::updateData, Qt::UniqueConnection);
+    }
 
     m_pEvokedSetModel = pEvokedSetModel;
 }
@@ -310,24 +312,26 @@ void AverageLayoutView::updateData()
 
             averageSceneItemTemp->m_lAverageData.clear();
 
-            //Get only the necessary data from the average model (use column 2)
-            QList<QPair<QString, DISPLIB::RowVectorPair> > averageData = m_pEvokedSetModel->data(0, 2, EvokedSetModelRoles::GetAverageData).value<QList<QPair<QString, DISPLIB::RowVectorPair> > >();
+            if (m_pEvokedSetModel){
+                //Get only the necessary data from the average model (use column 2)
+                QList<QPair<QString, DISPLIB::RowVectorPair> > averageData = m_pEvokedSetModel->data(0, 2, EvokedSetModelRoles::GetAverageData).value<QList<QPair<QString, DISPLIB::RowVectorPair> > >();
 
-            //Get the averageScenItem specific data row
-            int channelNumber = averageSceneItemTemp->m_iChannelNumber;
+                //Get the averageScenItem specific data row
+                int channelNumber = averageSceneItemTemp->m_iChannelNumber;
 
-            if(channelNumber != -1) {
-                averageSceneItemTemp->m_iChannelKind = m_pFiffInfo->chs.at(channelNumber).kind;
-                averageSceneItemTemp->m_iChannelUnit = m_pFiffInfo->chs.at(channelNumber).unit;
-                averageSceneItemTemp->m_firstLastSample.first = (-1)*m_pEvokedSetModel->getNumPreStimSamples();
+                if(channelNumber != -1) {
+                    averageSceneItemTemp->m_iChannelKind = m_pFiffInfo->chs.at(channelNumber).kind;
+                    averageSceneItemTemp->m_iChannelUnit = m_pFiffInfo->chs.at(channelNumber).unit;
+                    averageSceneItemTemp->m_firstLastSample.first = (-1)*m_pEvokedSetModel->getNumPreStimSamples();
 
-                if(!averageData.isEmpty()) {
-                    averageSceneItemTemp->m_firstLastSample.second = averageData.first().second.second - m_pEvokedSetModel->getNumPreStimSamples();
+                    if(!averageData.isEmpty()) {
+                        averageSceneItemTemp->m_firstLastSample.second = averageData.first().second.second - m_pEvokedSetModel->getNumPreStimSamples();
+                    }
+
+                    averageSceneItemTemp->m_iTotalNumberChannels = m_pEvokedSetModel->rowCount();
+                    averageSceneItemTemp->m_lAverageData = averageData;
+                    averageSceneItemTemp->m_bIsBad = m_pEvokedSetModel->getIsChannelBad(channelNumber);
                 }
-
-                averageSceneItemTemp->m_iTotalNumberChannels = m_pEvokedSetModel->rowCount();
-                averageSceneItemTemp->m_lAverageData = averageData;
-                averageSceneItemTemp->m_bIsBad = m_pEvokedSetModel->getIsChannelBad(channelNumber);
             }
         }
 
@@ -426,4 +430,19 @@ void AverageLayoutView::updateProcessingMode(ProcessingMode mode)
 void AverageLayoutView::setFiffInfo(const QSharedPointer<FIFFLIB::FiffInfo> pFiffInfo)
 {
     m_pFiffInfo = pFiffInfo;
+}
+
+//=============================================================================================================
+
+QSharedPointer<EvokedSetModel> AverageLayoutView::getEvokedSetModel()
+{
+    return m_pEvokedSetModel;
+}
+
+//=============================================================================================================
+
+void AverageLayoutView::clearView()
+{
+    setEvokedSetModel(Q_NULLPTR);
+    updateData();
 }

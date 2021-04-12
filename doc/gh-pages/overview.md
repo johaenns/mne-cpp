@@ -1,18 +1,20 @@
 ---
-title: About
+title: The Project
 parent: Home
 nav_order: 1
 ---
 
+# The MNE-CPP Project
+
 ## What is MNE?
 
-MNE-CPP is part of MNE, a tool suite for neurophysiology encompassing various projects that draw from MNE-C, originally written by Matti Hämäläinen (documented [here](https://mne.tools/mne-c-manual/MNE-manual-2.7.3.pdf))
+MNE-CPP is part of [The MNE Project](https://mne.tools/stable/index.html){:target="_blank" rel="noopener"}, a set of tools for neurophysiology analysis encompassing various projects that spawn from MNE-C, originally written by Matti Hämäläinen.
 
 Other projects include:
 
- - [MNE-Python](https://mne.tools/stable/index.html) - a python reimplementation of MNE-C, also extended with new visualization and analysis capabilities.
- - [MNE-MATLAB](https://mne.tools/stable/overview/matlab.html#mne-matlab) - a MATLAB interface for MNE structures and functions.
- - [MNE-C](http://www.nmr.mgh.harvard.edu/martinos/userInfo/data/MNE_register/index.php) - the original implementation of the MNE toolset in C.
+ - [MNE-Python](https://mne.tools/stable/index.html){:target="_blank" rel="noopener"} - a python reimplementation of MNE-C, also extended with new visualization and analysis capabilities.
+ - [MNE-MATLAB](https://mne.tools/stable/overview/matlab.html#mne-matlab){:target="_blank" rel="noopener"} - a MATLAB interface for MNE structures and functions.
+ - [MNE-C](http://www.nmr.mgh.harvard.edu/martinos/userInfo/data/MNE_register/index.php){:target="_blank" rel="noopener"} - the original implementation of the MNE toolset in C ([Manual](https://mne.tools/mne-c-manual/MNE-manual-2.7.3.pdf)).
 
 ## What is MNE-CPP?
 
@@ -25,19 +27,19 @@ MNE-CPP is open-source licensed under BSD (clause 3). MNE-CPP has two external d
 ## Why use MNE-CPP?
 
 We are targeting two user groups:
-* Front-End users with little or no coding background. These users are interested in straight-forward setups and applications with an easy to use GUI, such as MNE Scan and MNE Analyze. For more information see our [Learn section](pages/learn/learn.md).
+* Front-End users with little or no coding background. These users are interested in straight-forward setups and applications with an easy to use GUI, such as MNE Scan and MNE Analyze. For more information see our [documentation section](pages/documentation/documentation.md).
 * Back-End users who are experienced with programming in C++ and want to use MNE-CPP functionalities to build their own applications. For more information see our [Development section](pages/development/development.md).
 
 To that end, we aim to create software that allows users to do as much or as little coding as they are comfortable with, by making components of our software modular and making the process of adding functionality as straight-forward as possible.
 
 ## What's next?
 
-MNE-CPP is a community project. Contributions by new developers are always welcomed and greatly appreciated. If you are planning to contribute to MNE-CPP our [contributor page](pages/contribute/contribute.md) is a good point to start.
+MNE-CPP is a community project. Contributions by new developers are always welcomed and greatly appreciated. If you are planning to contribute to MNE-CPP our [contributor page](pages/development/contribute.md) is a good point to start.
 
 Currently, MNE-CPP's main development efforts can be divided into the following projects:
 
-| ![MNEScan](images/icon_mne_scan_256x256.png) | **MNE Scan** is the real time component of MNE CPP. With its acquisition and algorithmic plugin architecture it is able to acquire and process data of several MEG/EEG systems (TMSI Refa, eegosports, gtec, brainamp, LSL, VectorView, BabyMEG) in real-time. It is in active clinical use at the Boston Children’s Hospital. |
-| ![MNEAnalyze](images/icon_mne-analyze_256x256.png) | **MNE Analyze** provides an easy to use GUI for sensor and source level analysis. |
-| ![LibraryAPI](images/icon_mne-lib_256x256.png) | **Library API** describes the core libraries and their APIs provided by the MNE-CPP project. All MNE-CPP applications, e.g., MNE Scan and MNE Analyze, are solely based on these libraries, Qt5 and Eigen. |
+| ![MNEScan](images/icon_mne_scan_256x256.png) | [**MNE Scan**](pages/documentation/scan.md) is the real time component of MNE CPP. With its acquisition and algorithmic plugin architecture it is able to acquire and process data of several MEG/EEG systems (TMSI Refa, eegosports, gtec, brainamp, LSL, VectorView, BabyMEG) in real-time. It is in active clinical use at the Boston Children’s Hospital. |
+| ![MNEAnalyze](images/icon_mne-analyze_256x256.png) | [**MNE Analyze**](pages/documentation/analyze.md) provides an easy to use GUI for sensor and source level analysis. |
+| ![LibraryAPI](images/icon_mne-lib_256x256.png) | [**Library API**](pages/development/api.md) describes the core libraries and their APIs provided by the MNE-CPP project. All MNE-CPP applications, e.g., MNE Scan and MNE Analyze, are solely based on these libraries, Qt5 and Eigen. |
 
 Releases are versioned based on [semantic versioning](https://semver.org/). Currently all features are subject to change as we are still making broad changes to the libraries and applications of MNE-CPP.

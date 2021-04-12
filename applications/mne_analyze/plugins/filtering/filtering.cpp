@@ -78,7 +78,7 @@ Filtering::~Filtering()
 
 //=============================================================================================================
 
-QSharedPointer<IPlugin> Filtering::clone() const
+QSharedPointer<AbstractPlugin> Filtering::clone() const
 {
     QSharedPointer<Filtering> pFilteringClone = QSharedPointer<Filtering>::create();
     return pFilteringClone;
@@ -120,6 +120,9 @@ QDockWidget *Filtering::getControl()
     connect(this, &Filtering::guiModeChanged,
             m_pFilterSettingsView.data(), &FilterSettingsView::setGuiMode, Qt::UniqueConnection);
 
+    connect(this, &Filtering::guiStyleChanged,
+            m_pFilterSettingsView.data(), &FilterSettingsView::guiStyleChanged, Qt::UniqueConnection);
+
     connect(m_pFilterSettingsView->getFilterView().data(), &FilterDesignView::filterChannelTypeChanged,
             this, &Filtering::setFilterChannelType, Qt::UniqueConnection);
 
@@ -152,13 +155,15 @@ void Filtering::handleEvent(QSharedPointer<Event> e)
 {
     switch (e->getType()) {
     case SELECTED_MODEL_CHANGED:
-        if(QSharedPointer<FiffRawViewModel> pModel = qSharedPointerCast<FiffRawViewModel>(e->getData().value<QSharedPointer<AbstractModel> >())) {
-            if(m_pFilterSettingsView) {
-                setFilterActive(m_pFilterSettingsView->getFilterActive());
-                m_pFilterSettingsView->getFilterView()->setSamplingRate(pModel->getFiffInfo()->sfreq);
-                //m_pFilterSettingsView->getFilterView()->setMaxAllowedFilterTaps(pModel->getFiffInfo()->sfreq);
-                setFilterChannelType(m_pFilterSettingsView->getFilterView()->getChannelType());
-                setFilter(m_pFilterSettingsView->getFilterView()->getCurrentFilter());
+        if(e->getData().value<QSharedPointer<AbstractModel> >()->getType() == MODEL_TYPE::ANSHAREDLIB_FIFFRAW_MODEL) {
+            if(QSharedPointer<FiffRawViewModel> pModel = qSharedPointerCast<FiffRawViewModel>(e->getData().value<QSharedPointer<AbstractModel> >())) {
+                if(m_pFilterSettingsView) {
+                    setFilterActive(m_pFilterSettingsView->getFilterActive());
+                    m_pFilterSettingsView->getFilterView()->setSamplingRate(pModel->getFiffInfo()->sfreq);
+                    //m_pFilterSettingsView->getFilterView()->setMaxAllowedFilterTaps(pModel->getFiffInfo()->sfreq);
+                    setFilterChannelType(m_pFilterSettingsView->getFilterView()->getChannelType());
+                    setFilter(m_pFilterSettingsView->getFilterView()->getCurrentFilter());
+                }
             }
         }
         break;

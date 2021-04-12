@@ -123,6 +123,14 @@ public:
 
     //=========================================================================================================
     /**
+     * Gets currently selected STIM channel in GUI
+     *
+     * @return currently selected STIM channel
+     */
+    QString getSelectedStimChannel();
+
+    //=========================================================================================================
+    /**
      * Saves all important settings of this view via QSettings.
      */
     void saveSettings();
@@ -132,6 +140,12 @@ public:
      * Loads and inits all important settings of this view via QSettings.
      */
     void loadSettings();
+
+    //=========================================================================================================
+    /**
+     * Clears the view
+     */
+    void clearView();
 
 protected:
     //=========================================================================================================

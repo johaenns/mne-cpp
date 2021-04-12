@@ -41,6 +41,7 @@
 //=============================================================================================================
 
 #include "../../disp3D_global.h"
+#include "orbitalcameracontroller.h"
 
 //=============================================================================================================
 // QT INCLUDES
@@ -49,6 +50,8 @@
 #include <Qt3DExtras/Qt3DWindow>
 #include <QVector3D>
 #include <QPointer>
+#include <QObjectPicker>
+#include <Qt3DCore>
 
 //=============================================================================================================
 // FORWARD DECLARATIONS
@@ -59,6 +62,7 @@ class QPropertyAnimation;
 namespace Qt3DRender {
     class QPointLight;
     class QRenderCaptureReply;
+    class QPickEvent;
 }
 
 //=============================================================================================================
@@ -119,21 +123,39 @@ public:
 
     //=========================================================================================================
     /**
-     * Starts or stops to rotate all loaded 3D models.
+     * Starts or stops to rotate camera around 3D models.
      */
-    void startStopModelRotation(bool checked);
+    void startStopCameraRotation(bool bChecked);
+
+    //=========================================================================================================
+    /**
+     * Rotate camera arround given angle.
+     *
+     * @param[in] iAngle          The to rotate the camera.
+     *
+     */
+    void setCameraRotation(float fAngle);
+
+    //=========================================================================================================
+    /**
+     * Returns the camera's position via transform.
+     *
+     * @return The transform.
+     *
+     */
+    Qt3DCore::QTransform getCameraTransform();
 
     //=========================================================================================================
     /**
      * Toggle the coord axis visibility.
      */
-    void toggleCoordAxis(bool checked);
+    void toggleCoordAxis(bool bChecked);
 
     //=========================================================================================================
     /**
      * Show fullscreen.
      */
-    void showFullScreen(bool checked);
+    void showFullScreen(bool bChecked);
 
     //=========================================================================================================
     /**
@@ -155,6 +177,15 @@ public:
      */
     void takeScreenshot();
 
+
+    //=========================================================================================================
+    /**
+     * Initilize the object picking.
+     *
+     * @param [in] bActivatePicker     Wheater to activate the object picker.
+     */
+    void activatePicker(const bool bActivatePicker);
+
 protected:
 
     void saveScreenshot();
@@ -164,6 +195,12 @@ protected:
      * Init the light for the 3D view
      */
     void initLight();
+
+    //=========================================================================================================
+    /**
+     * Initilize the object picking.
+     */
+    void initObjectPicking();
 
     //=========================================================================================================
     /**
@@ -181,11 +218,11 @@ protected:
 
     //=========================================================================================================
     /**
-     * Starts the automated rotation animation for all 3D models being childern.
+     * Handle Picking events.
      *
-     * @param[in] pObject         The parent of the children to be rotated.
+     * @param[in] qPickEvent         The picking event that occured.
      */
-    void startModelRotationRecursive(QObject* pObject);
+    void handlePickerPress(Qt3DRender::QPickEvent *qPickEvent);
 
     QPointer<Qt3DCore::QEntity>                 m_pRootEntity;                  /**< The root/most top level entity buffer. */
     QPointer<Qt3DCore::QEntity>                 m_p3DObjectsEntity;             /**< The root/most top level entity buffer. */
@@ -195,9 +232,19 @@ protected:
     QPointer<CustomFrameGraph>                  m_pFrameGraph;                  /**< The frameGraph entity. */
     QPointer<Qt3DRender::QCamera>               m_pCamera;                      /**< The camera entity. */
     QPointer<Qt3DRender::QRenderCaptureReply>   m_pScreenCaptureReply;          /**< The capture reply object to save screenshots. */
+    QPointer<Qt3DRender::QObjectPicker>         m_pPicker;                      /**< The Picker entity. */
 
-    QList<QPointer<QPropertyAnimation> >  m_lPropertyAnimations;         /**< The animations for each 3D object. */
-    QList<QPointer<Qt3DRender::QPointLight> >  m_lLightSources;          /**< The light sources. */
+    QPointer<OrbitalCameraController>           m_pCamController;               /**< The controller for camera position */
+    QPointer<QPropertyAnimation>                m_pCameraAnimation;             /**< The animations to rotate the camera. */
+
+    QList<QPointer<Qt3DRender::QPointLight> >   m_lLightSources;                /**< The light sources. */
+
+signals:
+    /*
+     * Send whenever a pick event occured
+     */
+    void pickEventOccured(Qt3DRender::QPickEvent *qPickEvent);
+
 };
 } // NAMESPACE
 

@@ -38,21 +38,33 @@
 
 include(../../mne-cpp.pri)
 
+#Application version
+VERSION_MAJOR = 0
+VERSION_MINOR = 99
+VERSION_BUILD = 0
+
+DEFINES += "VERSION_MAJOR=$$VERSION_MAJOR"\
+       "VERSION_MINOR=$$VERSION_MINOR"\
+       "VERSION_BUILD=$$VERSION_BUILD"
+
+#Target version
+VERSION = $${VERSION_MAJOR}.$${VERSION_MINOR}.$${VERSION_BUILD}
+
 TEMPLATE = app
 
 QT += widgets network
 
-#CONFIG += console
+CONFIG += console
 
-CONFIG(debug,debug|release) {
-    macx {
-        CONFIG -= app_bundle
-    }
+!contains(MNECPP_CONFIG, withAppBundles) {
+    CONFIG -= app_bundle
 }
 
-contains(MNECPP_CONFIG, noOpenGL) {
-    DEFINES += NO_OPENGL
-    QT -= opengl
+DESTDIR = $${MNE_BINARY_DIR}
+
+TARGET = mne_anonymize
+CONFIG(debug, debug|release) {
+    TARGET = $$join(TARGET,,,d)
 }
 
 contains(MNECPP_CONFIG, static) {
@@ -75,12 +87,6 @@ contains(MNECPP_CONFIG, wasm) {
     DEFINES += WASMBUILD
 }
 
-TARGET = mne_anonymize
-
-CONFIG(debug, debug|release) {
-    TARGET = $$join(TARGET,,,d)
-}
-
 LIBS += -L$${MNE_LIBRARY_DIR}
 CONFIG(debug, debug|release) {
     LIBS += -lmnecppFiffd \
@@ -90,16 +96,15 @@ CONFIG(debug, debug|release) {
             -lmnecppUtils \
 }
 
-DESTDIR = $${MNE_BINARY_DIR}
-
-SOURCES += main.cpp \
+SOURCES += \
+    main.cpp \
     apphandler.cpp \
     fiffanonymizer.cpp \
     mainwindow.cpp \
     settingscontrollercl.cpp \
     settingscontrollergui.cpp
 
-HEADERS  += \
+HEADERS += \
     apphandler.h \
     fiffanonymizer.h \
     mainwindow.h \
@@ -113,24 +118,12 @@ INCLUDEPATH += $${EIGEN_INCLUDE_DIR}
 INCLUDEPATH += $${MNE_INCLUDE_DIR}
 INCLUDEPATH += $${MNE_FIFF_ANONYMIZER_DIR}
 
-# Deploy dependencies
-win32:!contains(MNECPP_CONFIG, static) {
-    EXTRA_ARGS =
-    DEPLOY_CMD = $$winDeployAppArgs($${TARGET},$${MNE_BINARY_DIR},$${MNE_LIBRARY_DIR},$${EXTRA_ARGS})
-    QMAKE_POST_LINK += $${DEPLOY_CMD}
-}
 unix:!macx {
     QMAKE_RPATHDIR += $ORIGIN/../lib
 }
-macx {
-    !contains(MNECPP_CONFIG, static) {
-        # 3 entries returned in DEPLOY_CMD
-        EXTRA_ARGS = -always-overwrite
-        DEPLOY_CMD = $$macDeployArgs($${TARGET},$${TARGET_EXT},$${MNE_BINARY_DIR},$${MNE_LIBRARY_DIR},$${EXTRA_ARGS})
-        QMAKE_POST_LINK += $${DEPLOY_CMD}
-    }
 
-    QMAKE_LFLAGS += -Wl,-rpath,../lib
+macx {
+    QMAKE_LFLAGS += -Wl,-rpath,@executable_path/../lib
 }
 
 # Activate FFTW backend in Eigen

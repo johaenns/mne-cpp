@@ -5,12 +5,13 @@
  *           Lorenz Esch <lesch@mgh.harvard.edu>;
  *           Lars Debor <Lars.Debor@tu-ilmenau.de>;
  *           Simon Heinke <Simon.Heinke@tu-ilmenau.de>
+ *           Gabriel Motta <gbmotta@mgh.harvard.edu>
  * @since    0.1.0
  * @date     February, 2017
  *
  * @section  LICENSE
  *
- * Copyright (C) 2017, Christoph Dinh, Lorenz Esch, Lars Debor, Simon Heinke. All rights reserved.
+ * Copyright (C) 2017, Christoph Dinh, Lorenz Esch, Lars Debor, Simon Heinke, Gabriel Motta. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without modification, are permitted provided that
  * the following conditions are met:
@@ -45,7 +46,7 @@
 #include "../anshared_global.h"
 #include "../Model/abstractmodel.h"
 #include "../Utils/types.h"
-#include "analyzedatamodel.h"
+#include <disp/viewers/helpers/bidsviewmodel.h>
 
 //=============================================================================================================
 // QT INCLUDES
@@ -56,10 +57,15 @@
 #include <QPointer>
 #include <QFileInfo>
 #include <QStandardItemModel>
+#include <QDateTime>
 
 //=============================================================================================================
 // FORWARD DECLARATIONS
 //=============================================================================================================
+
+namespace ANSHAREDLIB {
+    class Communicator;
+}
 
 //=============================================================================================================
 // DEFINE NAMESPACE ANSHAREDLIB
@@ -166,6 +172,24 @@ public:
 
     //=========================================================================================================
     /**
+     * Add subject with name sSubjectName to BidsViewModel singleton
+     *
+     * @param [in] sSubjectName     Name of the new subject item
+     *
+     * @return returns pointer to new subject item
+     */
+    QStandardItem* addSubject(const QString &sSubjectName);
+
+    //=========================================================================================================
+    /**
+     * Updates stored indexes of currently selected data and item
+     *
+     * @param [in] index    index of the new selected item
+     */
+    void newSelection(const QModelIndex &index);
+
+    //=========================================================================================================
+    /**
      * This is the main function for instanciating models. It simply calls the models constructor with the
      * provided path and inserts the model to the central item model. NO ERROR CHECKING IS PERFORMED !
      */
@@ -184,42 +208,108 @@ public:
         QSharedPointer<AbstractModel> temp = qSharedPointerCast<AbstractModel>(sm);
         temp->setModelPath(sPath);
 
-        if(temp->isInit()) {
-            // add to record, and tell others about the new model
-            QStandardItem* pItem = new QStandardItem(temp->getModelName());
-            pItem->setEditable(false);
-            pItem->setDragEnabled(true);
-            pItem->setToolTip(temp->getModelPath());
+        int iType;
+        QModelIndex index;
 
-            QVariant data;
-            data.setValue(temp);
-            pItem->setData(data);
-            m_pData->addData("Sample Subject", pItem);
-
-            emit newModelAvailable(temp);
-            return sm;
-        } else {
-            return Q_NULLPTR;
+        switch(temp->getType()){
+        case ANSHAREDLIB_FIFFRAW_MODEL:
+        case ANSHAREDLIB_NOISE_MODEL:
+            iType = BIDS_FUNCTIONALDATA;
+            index = m_SelectedItem;
+            break;
+        case ANSHAREDLIB_BEMDATA_MODEL:
+        case ANSHAREDLIB_MRICOORD_MODEL:
+            iType = BIDS_ANATOMICALDATA;
+            index = m_SelectedItem;
+            break;
+        case ANSHAREDLIB_ANNOTATION_MODEL:
+            iType = BIDS_ANNOTATION;
+            index = m_SelectedFunctionalData;
+            break;
+        case ANSHAREDLIB_AVERAGING_MODEL:
+            iType = BIDS_AVERAGE;
+            index = m_SelectedFunctionalData;
+            break;
+        default:
+            iType = BIDS_UNKNOWN;
+            index = m_SelectedItem;
         }
+
+        QStandardItem* pItem = new QStandardItem(temp->getModelName());
+        pItem->setEditable(false);
+        pItem->setDragEnabled(true);
+        pItem->setToolTip(temp->getModelPath());
+
+        QVariant data;
+        data.setValue(temp);
+        pItem->setData(data);
+        m_pData->addData(index,
+                         pItem,
+                         iType);
+        return sm;
+
+    }
+
+    //=========================================================================================================
+    template<class T>
+    QSharedPointer<T> addModel(QSharedPointer<T> pNewModel,
+                               const QString& sModelName){
+        QSharedPointer<AbstractModel> temp = qSharedPointerCast<AbstractModel>(pNewModel);
+        QStandardItem* pItem = new QStandardItem(sModelName);
+        pItem->setEditable(true);
+        pItem->setDragEnabled(true);
+        pItem->setToolTip(temp->getModelPath());
+
+        QVariant data;
+        data.setValue(temp);
+
+        switch(temp->getType()){
+            case ANSHAREDLIB_AVERAGING_MODEL:
+                pItem->setData(data);
+                m_pData->addToData(pItem,
+                                   m_SelectedFunctionalData,
+                                   BIDS_AVERAGE);
+                break;
+            case ANSHAREDLIB_ANNOTATION_MODEL:
+                pItem->setData(data);
+                m_pData->addToData(pItem,
+                                   m_SelectedFunctionalData,
+                                   BIDS_ANNOTATION);
+                break;
+            case ANSHAREDLIB_DIPOLEFIT_MODEL:
+                pItem->setData(data);
+                m_pData->addToData(pItem,
+                                   m_SelectedFunctionalData,
+                                   BIDS_DIPOLE);
+                break;
+            default:
+                qWarning() << "[AnalyzeData::addModel] Model type not supported";
+                break;
+        }
+        return pNewModel;
     }
 
 private:
-    QPointer<AnalyzeDataModel>            m_pData;         /**< The loaded models in form of a QStandardItemModel. */
+
+    //=========================================================================================================
+    /**
+     * Returns a list of all items (including child items) in the BidsViewModel;
+     *
+     * @param [in] parent   index of parent to search under. QModelIndex() by default
+     *
+     * @return list of all items in BidsViewModel
+     */
+    QList<QStandardItem*> getAllItems(QModelIndex parent = QModelIndex()) const;
+
+
+    QPointer<DISPLIB::BidsViewModel>        m_pData;                    /**< The BidsViewModel that holds all the subject, session, and data items. */
+
+    QPointer<ANSHAREDLIB::Communicator>     m_pCommu;                   /**< Used to send events */
+
+    QModelIndex                             m_SelectedItem;             /**< Index of currently selected item */
+    QModelIndex                             m_SelectedFunctionalData;   /**< Index of currently selected data item */
 
 signals:
-    //=========================================================================================================
-    /**
-     * This is emitted whenever a new model is loaded.
-     *
-     * @param[in] pModel      The newly available model
-     */
-    void newModelAvailable(QSharedPointer<AbstractModel> pModel);
-
-    //=========================================================================================================
-    /**
-     * This is emitted whenever the model is completely.
-     */
-    void modelIsEmpty();
 
     //=========================================================================================================
     /**

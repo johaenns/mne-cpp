@@ -232,6 +232,22 @@ public:
 
     //=========================================================================================================
     /**
+     * @brief Writes the transformation to file
+     *
+     * @param p_IODevice
+     */
+    void write(QIODevice &p_IODevice);
+
+    //=========================================================================================================
+    /**
+     * @brief Writes the transformation to stream
+     *
+     * @param p_pStream
+     */
+    void writeToStream(FiffStream* p_pStream);
+
+    //=========================================================================================================
+    /**
      * Size of the old struct (fiffCoordTransRec) 26*int = 26*4 = 104
      *
      * @return the size of the old struct fiffCoordTransRec.
@@ -313,5 +329,15 @@ inline bool operator== (const FiffCoordTrans &a, const FiffCoordTrans &b)
             a.invtrans.isApprox(b.invtrans, 0.0001f));
 }
 } // NAMESPACE
+
+#ifndef metatype_fiffcoordtrans
+#define metatype_fiffcoordtrans
+Q_DECLARE_METATYPE(FIFFLIB::FiffCoordTrans); /**< Provides QT META type declaration of the FIFFLIB::FiffCoordTrans type. For signal/slot usage.*/
+#endif
+
+#ifndef metatype_fiffcoordtrans
+#define metatype_fiffcoordtrans
+Q_DECLARE_METATYPE(FIFFLIB::FiffCoordTrans::SPtr); /**< Provides QT META type declaration of the FIFFLIB::FiffCoordTrans type. For signal/slot usage.*/
+#endif
 
 #endif // FIFF_COORD_TRANS_H

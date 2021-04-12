@@ -74,6 +74,7 @@ SettingsControllerCl::SettingsControllerCl()
 : m_pAnonymizer(FiffAnonymizer::SPtr(new FiffAnonymizer))
 , m_sAppName(qApp->applicationName())
 , m_sAppVer(qApp->applicationVersion())
+, m_sBuildDate(__DATE__)
 , m_bGuiMode(false)
 , m_bDeleteInputFileAfter(false)
 , m_bDeleteInputFileConfirmation(true)
@@ -84,7 +85,6 @@ SettingsControllerCl::SettingsControllerCl()
 , m_bInputFileDeleted(false)
 , m_bOutFileRenamed(false)
 {
-
 }
 
 //=============================================================================================================
@@ -93,6 +93,7 @@ SettingsControllerCl::SettingsControllerCl(const QStringList& arguments)
 : m_pAnonymizer(FiffAnonymizer::SPtr(new FiffAnonymizer))
 , m_sAppName(qApp->applicationName())
 , m_sAppVer(qApp->applicationVersion())
+, m_sBuildDate(__DATE__)
 , m_bGuiMode(false)
 , m_bDeleteInputFileAfter(false)
 , m_bDeleteInputFileConfirmation(true)
@@ -217,7 +218,7 @@ void SettingsControllerCl::initParser()
     m_parser.addOption(measDateOffsetOpt);
 
     QCommandLineOption birthdayOpt(QStringList() << "sb" << "subject_birthday",
-                                   QCoreApplication::translate("main","Specify the subject’s birthday. Default: 01012000"),
+                                   QCoreApplication::translate("main","Specify the subject’s birthday. Format: DDMMYYYY. Default: 01012000"),
                                    QCoreApplication::translate("main","date"));
     m_parser.addOption(birthdayOpt);
 
@@ -553,8 +554,8 @@ void SettingsControllerCl::printHeaderIfVerbose()
     printIfVerbose(" ");
     printIfVerbose("=============================================================================================");
     printIfVerbose(" ");
-    printIfVerbose(m_sAppName);
-    printIfVerbose("Version: " + m_sAppVer);
+    printIfVerbose(m_sAppName + "  (Version: " + m_sAppVer + ")");
+    printIfVerbose("Build Date: " + m_sBuildDate);
     printIfVerbose(" ");
 }
 
@@ -562,7 +563,6 @@ void SettingsControllerCl::printHeaderIfVerbose()
 
 void SettingsControllerCl::printFooterIfVerbose()
 {
-//    printIfVerbose(" ");
     printIfVerbose("=============================================================================================");
     printIfVerbose(" ");
 }

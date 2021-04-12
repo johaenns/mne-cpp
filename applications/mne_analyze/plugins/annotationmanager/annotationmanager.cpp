@@ -74,7 +74,7 @@ AnnotationManager::~AnnotationManager()
 
 //=============================================================================================================
 
-QSharedPointer<IPlugin> AnnotationManager::clone() const
+QSharedPointer<AbstractPlugin> AnnotationManager::clone() const
 {
     QSharedPointer<AnnotationManager> pAnnotationManagerClone(new AnnotationManager);
     return pAnnotationManagerClone;
@@ -84,7 +84,8 @@ QSharedPointer<IPlugin> AnnotationManager::clone() const
 
 void AnnotationManager::init()
 {
-    m_pCommu = new Communicator(this);
+    m_pCommu = QSharedPointer<ANSHAREDLIB::Communicator>(new ANSHAREDLIB::Communicator(this));
+    m_bAlreadyLoaded = false;
 }
 
 //=============================================================================================================
@@ -137,11 +138,17 @@ QDockWidget *AnnotationManager::getControl()
     connect(this, &AnnotationManager::newAnnotationModelAvailable,
             pAnnotationSettingsView, &AnnotationSettingsView::setModel, Qt::UniqueConnection);
 
-    connect(m_pAnalyzeData.data(), &AnalyzeData::modelIsEmpty,
-            pAnnotationSettingsView, &AnnotationSettingsView::reset, Qt::UniqueConnection);
-
     connect(this, &AnnotationManager::newFiffRawViewModel,
             pAnnotationSettingsView, &AnnotationSettingsView::onNewFiffRawViewModel, Qt::UniqueConnection);
+
+    connect(pAnnotationSettingsView, &AnnotationSettingsView::loadingStart,
+            this, &AnnotationManager::triggerLoadingStart, Qt::DirectConnection);
+
+    connect(pAnnotationSettingsView, &AnnotationSettingsView::loadingEnd,
+            this, &AnnotationManager::triggerLoadingEnd, Qt::DirectConnection);
+
+    connect(this, &AnnotationManager::clearView,
+            pAnnotationSettingsView, &AnnotationSettingsView::clearView, Qt::UniqueConnection);
 
     QDockWidget* pControl = new QDockWidget(getName());
     pControl->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea | Qt::BottomDockWidgetArea);
@@ -165,15 +172,18 @@ QWidget *AnnotationManager::getView()
 void AnnotationManager::handleEvent(QSharedPointer<Event> e)
 {
     switch (e->getType()) {
-        case EVENT_TYPE::NEW_ANNOTATION_ADDED:
-            emit newAnnotationAvailable(e->getData().toInt());
-            onTriggerRedraw();
-            break;
-        case EVENT_TYPE::SELECTED_MODEL_CHANGED:
-            onModelChanged(e->getData().value<QSharedPointer<ANSHAREDLIB::AbstractModel> >());
-            break;
-        default:
-            qWarning() << "[AnnotationManager::handleEvent] Received an Event that is not handled by switch cases.";
+    case EVENT_TYPE::NEW_ANNOTATION_ADDED:
+        emit newAnnotationAvailable(e->getData().toInt());
+        onTriggerRedraw();
+        break;
+    case EVENT_TYPE::SELECTED_MODEL_CHANGED:
+        onModelChanged(e->getData().value<QSharedPointer<ANSHAREDLIB::AbstractModel> >());
+        break;
+    case EVENT_TYPE::MODEL_REMOVED:
+        onModelRemoved(e->getData().value<QSharedPointer<ANSHAREDLIB::AbstractModel>>());
+        break;
+    default:
+        qWarning() << "[AnnotationManager::handleEvent] Received an Event that is not handled by switch cases.";
     }
 }
 
@@ -184,6 +194,7 @@ QVector<EVENT_TYPE> AnnotationManager::getEventSubscriptions(void) const
     QVector<EVENT_TYPE> temp;
     temp.push_back(NEW_ANNOTATION_ADDED);
     temp.push_back(SELECTED_MODEL_CHANGED);
+    temp.push_back(MODEL_REMOVED);
 
     return temp;
 }
@@ -196,8 +207,19 @@ void AnnotationManager::onModelChanged(QSharedPointer<ANSHAREDLIB::AbstractModel
         emit disconnectFromModel();
         FiffRawViewModel::SPtr pFiffRawModel = qSharedPointerCast<FiffRawViewModel>(pNewModel);
 
-        emit newAnnotationModelAvailable(pFiffRawModel->getAnnotationModel());
+        if(pFiffRawModel->hasSavedEvents()){
+            emit newAnnotationModelAvailable(pFiffRawModel->getAnnotationModel());
+        } else {
+            QSharedPointer<AnnotationModel> pAnnModel = QSharedPointer<AnnotationModel>::create(pFiffRawModel);
+            emit newAnnotationModelAvailable(pAnnModel);
+            m_pAnalyzeData->addModel<ANSHAREDLIB::AnnotationModel>(pAnnModel,
+                                                                   "Events");
+        }
         emit newFiffRawViewModel(pFiffRawModel);
+    } else if(pNewModel->getType() == MODEL_TYPE::ANSHAREDLIB_ANNOTATION_MODEL) {
+        emit disconnectFromModel();
+        AnnotationModel::SPtr pAnnModel = qSharedPointerCast<AnnotationModel>(pNewModel);
+        emit newAnnotationModelAvailable(pAnnModel);
     }
 }
 
@@ -229,4 +251,27 @@ void AnnotationManager::onJumpToSelected()
 void AnnotationManager::onGroupsUpdated()
 {
     m_pCommu->publishEvent(EVENT_GROUPS_UPDATED);
+}
+
+//=============================================================================================================
+
+void AnnotationManager::triggerLoadingStart(const QString& sMessage)
+{
+    m_pCommu->publishEvent(LOADING_START, QVariant::fromValue(sMessage));
+}
+
+//=============================================================================================================
+
+void AnnotationManager::triggerLoadingEnd(const QString& sMessage)
+{
+    m_pCommu->publishEvent(LOADING_END, QVariant::fromValue(sMessage));
+}
+
+//=============================================================================================================
+
+void AnnotationManager::onModelRemoved(QSharedPointer<ANSHAREDLIB::AbstractModel> pRemovedModel)
+{
+    if(pRemovedModel->getType() == MODEL_TYPE::ANSHAREDLIB_ANNOTATION_MODEL || pRemovedModel->getType() == MODEL_TYPE::ANSHAREDLIB_FIFFRAW_MODEL) {
+        emit clearView(pRemovedModel);
+    }
 }

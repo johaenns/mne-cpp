@@ -41,15 +41,16 @@ QT += testlib network concurrent
 QT -= gui
 
 CONFIG   += console
-CONFIG   -= app_bundle
-
-TARGET = test_dipole_fit
-
-CONFIG(debug, debug|release) {
-    TARGET = $$join(TARGET,,,d)
+!contains(MNECPP_CONFIG, withAppBundles) {
+    CONFIG -= app_bundle
 }
 
 DESTDIR =  $${MNE_BINARY_DIR}
+
+TARGET = test_dipole_fit
+CONFIG(debug, debug|release) {
+    TARGET = $$join(TARGET,,,d)
+}
 
 contains(MNECPP_CONFIG, static) {
     CONFIG += static
@@ -76,17 +77,6 @@ CONFIG(debug, debug|release) {
 SOURCES += \
     test_dipole_fit.cpp
 
-HEADERS += \
-
-RESOURCE_FILES +=\
-    $${ROOT_DIR}/resources/general/surf2bem/icos.fif \
-    $${ROOT_DIR}/resources/general/coilDefinitions/coil_def.dat \
-    $${ROOT_DIR}/resources/general/coilDefinitions/coil_def_Elekta.dat \
-
-# Copy resource files from repository to bin resource folder
-COPY_CMD = $$copyResources($${RESOURCE_FILES})
-QMAKE_POST_LINK += $${COPY_CMD}
-
 INCLUDEPATH += $${EIGEN_INCLUDE_DIR}
 INCLUDEPATH += $${MNE_INCLUDE_DIR}
 
@@ -95,17 +85,12 @@ contains(MNECPP_CONFIG, withCodeCov) {
     QMAKE_LFLAGS += --coverage
 }
 
-# Deploy dependencies
-win32:!contains(MNECPP_CONFIG, static) {
-    EXTRA_ARGS =
-    DEPLOY_CMD = $$winDeployAppArgs($${TARGET},$${MNE_BINARY_DIR},$${MNE_LIBRARY_DIR},$${EXTRA_ARGS})
-    QMAKE_POST_LINK += $${DEPLOY_CMD}
-}
 unix:!macx {
     QMAKE_RPATHDIR += $ORIGIN/../lib
 }
+
 macx {
-    QMAKE_LFLAGS += -Wl,-rpath,../lib
+    QMAKE_LFLAGS += -Wl,-rpath,@executable_path/../lib
 }
 
 # Activate FFTW backend in Eigen for non-static builds only

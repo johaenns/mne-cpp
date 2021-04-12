@@ -96,7 +96,7 @@ FiffRawViewModel::FiffRawViewModel(const QString &sFilePath,
                                    qint32 iVisibleWindowSize,
                                    qint32 iPreloadBufferSize,
                                    QObject *pParent)
-: AbstractModel(pParent)
+: AbstractModel(sFilePath, pParent)
 , m_dDx(1.0)
 , m_iSamplesPerBlock(1024)
 , m_iVisibleWindowSize(iVisibleWindowSize)
@@ -107,15 +107,13 @@ FiffRawViewModel::FiffRawViewModel(const QString &sFilePath,
 , m_bEndOfFileReached(false)
 , m_blockLoadFutureWatcher()
 , m_bCurrentlyLoading(false)
+, m_pRtFilter(FilterOverlapAdd::SPtr::create())
+, m_bPerformFiltering(false)
 , m_iDistanceTimerSpacer(1000)
 , m_iScrollPos(0)
 , m_bDispAnnotation(true)
-, m_bPerformFiltering(false)
-, m_pAnnotationModel(QSharedPointer<AnnotationModel>::create())
-, m_pRtFilter(FilterOverlapAdd::SPtr::create())
+//, m_pAnnotationModel(QSharedPointer<AnnotationModel>::create())
 {
-    Q_UNUSED(sFilePath)
-
     // connect data reloading: this will be run concurrently
     connect(&m_blockLoadFutureWatcher, &QFutureWatcher<int>::finished,
             [this]() {
@@ -429,14 +427,22 @@ float FiffRawViewModel::getNumberOfTimeSpacers() const
 
 int FiffRawViewModel::getTimeMarks(int iIndex) const
 {
-    return m_pAnnotationModel->getAnnotation(iIndex);
+    if (m_pAnnotationModel){
+        return m_pAnnotationModel->getAnnotation(iIndex);
+    } else {
+        return 0;
+    }
 }
 
 //=============================================================================================================
 
 int FiffRawViewModel::getTimeListSize() const
 {
-    return m_pAnnotationModel->getNumberOfAnnotations();
+    if(m_pAnnotationModel){
+        return m_pAnnotationModel->getNumberOfAnnotations();
+    } else {
+        return 0;
+    }
 }
 
 //=============================================================================================================
@@ -471,16 +477,12 @@ bool FiffRawViewModel::shouldDisplayAnnotation() const
 
 QSharedPointer<AnnotationModel> FiffRawViewModel::getAnnotationModel() const
 {
-    return m_pAnnotationModel;
-}
+    if(m_pAnnotationModel){
+        return m_pAnnotationModel;
+    } else {
+        return QSharedPointer<AnnotationModel>::create();
+    }
 
-//=============================================================================================================
-
-void FiffRawViewModel::addTimeMark(int iLastClicked)
-{
-    m_pAnnotationModel->setSamplePos(iLastClicked);
-    emit m_pAnnotationModel->addNewAnnotation();
-    //m_pAnnotationModel->insertRow(0, QModelIndex());
 }
 
 //=============================================================================================================
@@ -492,6 +494,12 @@ void FiffRawViewModel::setFilter(const FilterKernel& filterData)
     if(m_bPerformFiltering) {
         reloadAllData();
     }
+}
+//=============================================================================================================
+
+const FilterKernel& FiffRawViewModel::getFilter()
+{
+    return m_filterKernel;
 }
 
 //=============================================================================================================
@@ -862,7 +870,7 @@ void FiffRawViewModel::postBlockLoad(int result)
         case 0:
         {
             // insertion of earlier blocks
-            int iNewBlocks = m_lNewData.size();
+            int iNewBlocks = static_cast<int>(m_lNewData.size());
 
             m_dataMutex.lock();
             for (int i = 0; i < iNewBlocks; ++i) {
@@ -887,7 +895,7 @@ void FiffRawViewModel::postBlockLoad(int result)
         case 1:
         {
             // insertion of later blocks
-            int iNewBlocks = m_lNewData.size();
+            int iNewBlocks = static_cast<int>(m_lNewData.size());
 
             m_dataMutex.lock();
             for (int i = 0; i < iNewBlocks; ++i) {
@@ -990,4 +998,18 @@ void FiffRawViewModel::reloadAllData()
     }
 
     emit dataChanged(createIndex(0,0), createIndex(rowCount(), columnCount()));
+}
+
+//=============================================================================================================
+
+bool FiffRawViewModel::hasSavedEvents()
+{
+    return m_pAnnotationModel;
+}
+
+//=============================================================================================================
+
+void FiffRawViewModel::setAnnotationModel(QSharedPointer<ANSHAREDLIB::AnnotationModel> pModel)
+{
+    m_pAnnotationModel = pModel;
 }

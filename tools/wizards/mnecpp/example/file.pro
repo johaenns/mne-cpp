@@ -39,15 +39,16 @@ TEMPLATE = app
 QT += widgets 3dextras
 
 CONFIG   += console
-CONFIG   -= app_bundle
-
-TARGET = %{ProjectName}
-
-CONFIG(debug, debug|release) {
-    TARGET = $$join(TARGET,,,d)
+!contains(MNECPP_CONFIG, withAppBundles) {
+    CONFIG -= app_bundle
 }
 
 DESTDIR =  $${MNE_BINARY_DIR}
+
+TARGET = %{ProjectName}
+CONFIG(debug, debug|release) {
+    TARGET = $$join(TARGET,,,d)
+}
 
 contains(MNECPP_CONFIG, static) {
     CONFIG += static
@@ -69,21 +70,15 @@ CONFIG(debug, debug|release) {
 
 SOURCES += %{CppFileName}
 
-HEADERS  +=
-
-FORMS    +=
-
 INCLUDEPATH += $${EIGEN_INCLUDE_DIR}
 INCLUDEPATH += $${MNE_INCLUDE_DIR}
 
-win32:!contains(MNECPP_CONFIG, static) {
-    EXTRA_ARGS =
-    DEPLOY_CMD = $$winDeployArgs($${TARGET},$${MNE_BINARY_DIR},$${MNE_LIBRARY_DIR},$${EXTRA_ARGS})
-    QMAKE_POST_LINK += $${DEPLOY_CMD}
-}
 unix:!macx {
-    # Unix
     QMAKE_RPATHDIR += $ORIGIN/../lib
+}
+
+macx {
+    QMAKE_LFLAGS += -Wl,-rpath,../lib
 }
 
 # Activate FFTW backend in Eigen for non-static builds only

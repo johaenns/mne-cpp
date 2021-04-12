@@ -37,17 +37,18 @@ include(../../../../mne-cpp.pri)
 
 TEMPLATE = lib
 
+QT += widgets svg network
+
 CONFIG += skip_target_version_ext
 
-QT += widgets svg network
 DEFINES += SCSHARED_LIBRARY
+
+DESTDIR = $${MNE_LIBRARY_DIR}
 
 TARGET = scShared
 CONFIG(debug, debug|release) {
     TARGET = $$join(TARGET,,,d)
 }
-
-DESTDIR = $${MNE_LIBRARY_DIR}
 
 contains(MNECPP_CONFIG, static) {
     CONFIG += staticlib
@@ -101,10 +102,9 @@ SOURCES += \
 
 HEADERS += \
     scshared_global.h \
-    Interfaces/IPlugin.h \
-    Interfaces/ISensor.h \
-    Interfaces/IAlgorithm.h \
-    Interfaces/IIO.h \
+    Plugins/abstractplugin.h \
+    Plugins/abstractsensor.h \
+    Plugins/abstractalgorithm.h \
     Management/pluginmanager.h \
     Management/pluginconnector.h \
     Management/plugininputconnector.h \
@@ -127,14 +127,11 @@ header_files.path = $${MNE_INSTALL_INCLUDE_DIR}/scShared
 INSTALLS += header_files
 
 win32:!contains(MNECPP_CONFIG, static) {
-    # Deploy/Copy library to bin folder manually (windeployqt only takes care of qt and system libraries)
-    EXTRA_ARGS =
-    DEPLOY_CMD = $$winDeployLibArgs($${TARGET},$${MNE_BINARY_DIR},$${MNE_LIBRARY_DIR},$${EXTRA_ARGS})
-    QMAKE_POST_LINK += $${DEPLOY_CMD}
+    QMAKE_POST_LINK += $$QMAKE_COPY $$shell_path($${MNE_LIBRARY_DIR}/$${TARGET}.dll) $${MNE_BINARY_DIR}
 }
 
 macx {
-    QMAKE_LFLAGS += -Wl,-rpath,../lib
+    QMAKE_LFLAGS_SONAME = -Wl,-install_name,@rpath/
 }
 
 # Activate FFTW backend in Eigen for non-static builds only

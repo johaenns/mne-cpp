@@ -351,7 +351,7 @@ void ConnectorManager::loadConnectors(const QString& dir)
     QString sJSONFile;
 
     for(QStaticPlugin plugin : staticInstances) {
-        // IPlugin
+        // AbstractPlugin
         if(plugin.instance()) {
             if(IConnector* t_pIConnector = qobject_cast<IConnector*>(plugin.instance())) {
                 t_pIConnector->setStatus(false);
@@ -412,7 +412,7 @@ void ConnectorManager::loadConnectors(const QString& dir)
     //
     qint32 configConnector = -1;
     QString configFileName("plugin.cfg");
-    QFile configFile(QString("%1/resources/mne_rt_server_plugins/"+configFileName).arg(QCoreApplication::applicationDirPath()));
+    QFile configFile(QString("%1/resources/mne_rt_server/plugins/"+configFileName).arg(QCoreApplication::applicationDirPath()));
     if(!configFile.open(QIODevice::ReadOnly)) {
         printf("Not able to read config file... %s\n", configFile.fileName().toUtf8().constData());
     }

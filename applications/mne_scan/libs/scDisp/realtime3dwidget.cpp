@@ -242,7 +242,7 @@ void RealTime3DWidget::update(SCMEASLIB::Measurement::SPtr pMeasurement)
                 //Add all digitizer but additional points to the 3D view
                 QFile fileDig(pHpiFitResult->sFilePathDigitzers);
                 FiffDigPointSet digSet(fileDig);
-                FiffDigPointSet digSetWithoutAdditional = digSet.pickTypes(QList<int>()<<FIFFV_POINT_HPI<<FIFFV_POINT_CARDINAL<<FIFFV_POINT_EEG);
+                FiffDigPointSet digSetWithoutAdditional = digSet.pickTypes(QList<int>()<<FIFFV_POINT_HPI<<FIFFV_POINT_CARDINAL<<FIFFV_POINT_EEG<<FIFFV_POINT_EXTRA);
                 m_pTrackedDigitizer = m_pData3DModel->addDigitizerData("Subject",
                                                                        "Tracked Digitizers",
                                                                        digSetWithoutAdditional);
@@ -374,7 +374,7 @@ void RealTime3DWidget::initDisplayControllWidgets()
             m_p3DView.data(), &View3D::setSceneColor);
 
     connect(pControl3DView, &Control3DView::rotationChanged,
-            m_p3DView.data(), &View3D::startStopModelRotation);
+            m_p3DView.data(), &View3D::startStopCameraRotation);
 
     connect(pControl3DView, &Control3DView::showCoordAxis,
             m_p3DView.data(), &View3D::toggleCoordAxis);

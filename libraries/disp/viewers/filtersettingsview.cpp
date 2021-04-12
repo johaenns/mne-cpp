@@ -78,9 +78,23 @@ FilterSettingsView::FilterSettingsView(const QString& sSettingsPath,
 
     loadSettings();
 
+    //Create and connect design viewer
     m_pFilterView = FilterDesignView::SPtr::create(m_sSettingsPath,
                                                    Q_NULLPTR,
                                                    Qt::Dialog);
+
+    connect(m_pFilterView.data(), &FilterDesignView::updateFilterFrom,[=](double dFrom){
+                m_pUi->m_pDoubleSpinBoxFrom->setValue(dFrom);
+            });
+    connect(m_pFilterView.data(), &FilterDesignView::updateFilterTo,[=](double dTo){
+                m_pUi->m_pDoubleSpinBoxTo->setValue(dTo);
+            });
+
+    connect(this, &FilterSettingsView::guiStyleChanged,
+            m_pFilterView.data(), &FilterDesignView::guiStyleChanged);
+
+    m_pUi->m_pDoubleSpinBoxFrom->setValue(m_pFilterView->getFrom());
+    m_pUi->m_pDoubleSpinBoxTo->setValue(m_pFilterView->getTo());
 
     //Connect GUI elements
     connect(m_pUi->m_pCheckBoxActivateFilter, &QCheckBox::toggled,
@@ -205,6 +219,7 @@ void FilterSettingsView::onShowFilterView()
     } else {
         m_pFilterView->activateWindow();
         m_pFilterView->show();
+        m_pFilterView->updateFilterPlot();
     }
 }
 
@@ -248,4 +263,11 @@ void FilterSettingsView::onFilterChannelTypeChanged(const QString& sType)
     m_pFilterView->setChannelType(sType);
 
     saveSettings();
+}
+
+//=============================================================================================================
+
+void FilterSettingsView::clearView()
+{
+
 }

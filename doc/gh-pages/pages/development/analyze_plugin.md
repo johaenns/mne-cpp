@@ -1,32 +1,31 @@
 ---
 title: Creating a new plugin
 parent: MNE Analyze
-grand_parent: Develop
+grand_parent: Development
 nav_order: 1
 ---
 # Creating a New Plugin
 
-This guide covers the creation of a new plugin
+This guide covers the creation of a new plugin.
 
 ## Overview
 
-All MNE Analyze plugins are subclassed from the same base, IPlugin (`/applications/mne_analyze/libs/anShared/Interfaces/IPlugin.h`). Unlike MNE Scan, MNE Analyze does not differentiate between types of plugins. MNE Analyze plugins are loaded into MNE Analyze at run time from `bin/mne_analyze_plugins`. Once loaded, MNE Analyze gets the menus, controls, and views from each of the plugins and displays them to the user. Currently the plugins are limited to returning one of each of these. For details on how these steps are done, see `/applications/mne_analyze/mne_analyze/analyzecore.cpp` function `initPluginManager()` for how plugins are loaded, and the constructor for `MainWindow` in `/applications/mne_analyze/mne_analyze/mainwindow.cpp` for how the GUI elements are loaded.
+All MNE Analyze plugins are subclassed from the same base, AbstractPlugin (`/applications/mne_analyze/libs/anShared/Plugins/abstractplugin.h`). Unlike MNE Scan, MNE Analyze does not differentiate between types of plugins. MNE Analyze plugins are loaded into MNE Analyze at run time from `bin/mne_analyze_plugins`. Once loaded, MNE Analyze gets the menus, controls, and views from each of the plugins and displays them to the user. Currently the plugins are limited to returning one of each of these. For details on how these steps are done, see `/applications/mne_analyze/mne_analyze/analyzecore.cpp` function `initPluginManager()` for how plugins are loaded, and the constructor for `MainWindow` in `/applications/mne_analyze/mne_analyze/mainwindow.cpp` for how the GUI elements are loaded.
 
 ## Sample Plugin
 
 A sample plugin with no functionality is included in `/applications/mne_analyze/plugins/sampleplugin`. A good way to start implementing a plugin is to duplicate that folder and its contents and use an IDE to replace all instances of 'SamplePlugin' with the name of the new plugin. See the end of the guide for some easy to miss details on getting new plugins to work correctly.
 
-## Deriving from IPlugin
+## Deriving from AbstractPlugin
 
-IPlugin has a number of pure virtual functions that need to be defined by any new plugin. Among them are functions for getting the view, control, and menu GUI items for the plugin, as well subscribing to and receiving events from the event manager.
+AbstractPlugin has a number of pure virtual functions that need to be defined by any new plugin. Among them are functions for getting the view, control, and menu GUI items for the plugin, as well subscribing to and receiving events from the event manager.
 
 ### clone()
 
 Returns an instance of the plugin. This is not a copy. Most of the existing plugins do something like this:
 
 ```
-QSharedPointer<myNewPlugin> pMyNewPluginClone(new myNewPluginClone);
-return pMyNewPluginClone;
+    return QSharedPointer<AbstractPlugin> (new Averaging);
 ```
 
 ### init()
@@ -130,6 +129,18 @@ switch (e->getType()) {
     default:
         qWarning() << "[Averaging::handleEvent] Received an Event that is not handled by switch cases.";
 ```
+
+## Views and Controls
+
+Existing views and controls are in the library layer, in the disp library. These can be used when making you plugin's view or controls. Otherwise, custom ones can be made with QtCreator using `.ui` files. All of the views and controls used subclass from `AbstractView`.
+
+### Using the event system
+
+Events are how the plugins in MNE Analyze communicate with each other. If your plugin needs to know about any new data that was loaded, any new item being selected, or wants to make use of any of the scaling or channel selection controls already provided by other plugins, you can subscribe to the relevant events. If you plugin needs to instead send out data, you can send the relevant events or create new ones to suit you needs. See the page on the [event system](analyze_event.md).
+
+### Setting/Clearing Data
+
+Data is displayed to the user using views, which display the data contained in models, in a [Model/View](https://doc.qt.io/qt-5/model-view-programming.html) setup.
 
 ## Static Building
 

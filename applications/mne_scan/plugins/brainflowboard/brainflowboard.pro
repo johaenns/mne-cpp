@@ -37,29 +37,20 @@ include(../../../../mne-cpp.pri)
 
 TEMPLATE = lib
 
+QT += core widgets
+
 CONFIG += skip_target_version_ext
 
-CONFIG += c++11
-CONFIG += plugin
+CONFIG += c++11 plugin
 
-DEFINES += QT_DEPRECATED_WARNINGS
 DEFINES += BRAINFLOWBOARD_PLUGIN
 
-QT += core widgets
+DESTDIR = $${MNE_BINARY_DIR}/mne_scan_plugins
 
 TARGET = brainflowboard
 CONFIG(debug, debug|release) {
     TARGET = $$join(TARGET,,,d)
 }
-
-contains(MNECPP_CONFIG, static) {
-    CONFIG += staticlib
-    DEFINES += STATICBUILD
-} else {
-    CONFIG += shared
-}
-
-DESTDIR = $${MNE_BINARY_DIR}/mne_scan_plugins
 
 contains(MNECPP_CONFIG, static) {
     CONFIG += staticlib
@@ -116,17 +107,12 @@ DISTFILES += \
 OTHER_FILES += \
     brainflowboard.json
 
-QMAKE_POST_LINK += $${COPY_CMD}
-
-UI_DIR = $$PWD
-
 unix {
     target.path = /usr/lib
 }
 !isEmpty(target.path): INSTALLS += target
 
 unix:!macx {
-    # Unix
     QMAKE_RPATHDIR += $ORIGIN/../../lib
 }
 

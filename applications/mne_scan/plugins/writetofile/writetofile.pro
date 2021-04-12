@@ -37,28 +37,20 @@ include(../../../../mne-cpp.pri)
 
 TEMPLATE = lib
 
+QT += core widgets svg
+
 CONFIG += skip_target_version_ext
 
 CONFIG += plugin
-CONFIG += c++11
 
 DEFINES += WRITETOFILE_PLUGIN
 
-QT += core widgets svg
+DESTDIR = $${MNE_BINARY_DIR}/mne_scan_plugins
 
 TARGET = writetofile
 CONFIG(debug, debug|release) {
     TARGET = $$join(TARGET,,,d)
 }
-
-contains(MNECPP_CONFIG, static) {
-    CONFIG += staticlib
-    DEFINES += STATICBUILD
-} else {
-    CONFIG += shared
-}
-
-DESTDIR = $${MNE_BINARY_DIR}/mne_scan_plugins
 
 contains(MNECPP_CONFIG, static) {
     CONFIG += staticlib
@@ -108,29 +100,16 @@ HEADERS += \
 FORMS += \
         FormFiles/writetofilesetup.ui \
 
-RESOURCE_FILES +=\
-
-# Copy resource files from repository to bin resource folder
-COPY_CMD = $$copyResources($${RESOURCE_FILES})
-QMAKE_POST_LINK += $${COPY_CMD}
-
 INCLUDEPATH += $${EIGEN_INCLUDE_DIR}
 INCLUDEPATH += $${MNE_INCLUDE_DIR}
 INCLUDEPATH += $${MNE_SCAN_INCLUDE_DIR}
 
 OTHER_FILES += writetofile.json
 
-# Put generated form headers into the origin --> cause other src is pointing at them
-UI_DIR = $$PWD
-
-# suppress visibility warnings
-unix: QMAKE_CXXFLAGS += -Wno-attributes
-
 RESOURCES += \
     writetofile.qrc
 
 unix:!macx {
-    # Unix
     QMAKE_RPATHDIR += $ORIGIN/../../lib
 }
 

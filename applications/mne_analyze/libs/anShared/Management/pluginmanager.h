@@ -62,8 +62,7 @@ namespace ANSHAREDLIB
 // FORWARD DECLARATIONS
 //=============================================================================================================
 
-class IPlugin;
-class AnalyzeSettings;
+class AbstractPlugin;
 class AnalyzeData;
 
 //=============================================================================================================
@@ -106,10 +105,9 @@ public:
     /**
      * Initializes the plugins.
      *
-     * @param [in] settings      the global mne analyze settings
      * @param [in] data          the global mne analyze data
      */
-    void initPlugins(QSharedPointer<AnalyzeSettings> settings, QSharedPointer<AnalyzeData> data);
+    void initPlugins(QSharedPointer<AnalyzeData> data);
 
     //=========================================================================================================
     /**
@@ -127,7 +125,7 @@ public:
      *
      * @return reference to vector containing all plugins.
      */
-    inline const QVector<IPlugin*>& getPlugins();
+    inline const QVector<AbstractPlugin*>& getPlugins();
 
     //=========================================================================================================
     /**
@@ -137,14 +135,14 @@ public:
     void shutdown();
 
 private:
-    QVector<IPlugin*>    m_qVecPlugins;       /**< Vector containing all plugins. */
+    QVector<AbstractPlugin*>    m_qVecPlugins;       /**< Vector containing all plugins. */
 };
 
 //=============================================================================================================
 // INLINE DEFINITIONS
 //=============================================================================================================
 
-inline const QVector<IPlugin*>& PluginManager::getPlugins()
+inline const QVector<AbstractPlugin*>& PluginManager::getPlugins()
 {
     return m_qVecPlugins;
 }
