@@ -60,7 +60,6 @@
 using namespace BANDPOWERPLUGIN;
 using namespace SCMEASLIB;
 using namespace UTILSLIB;
-using namespace IOBUFFER;
 using namespace DISPLIB;
 //using namespace RTPROCESSINGLIB;
 using namespace FIFFLIB;
@@ -102,7 +101,7 @@ BandPower::~BandPower()
 
 //=============================================================================================================
 
-QSharedPointer<IPlugin> BandPower::clone() const
+QSharedPointer<AbstractPlugin> BandPower::clone() const
 {
     QSharedPointer<BandPower> pBandPowerClone(new BandPower);
     return pBandPowerClone;
@@ -122,8 +121,8 @@ void BandPower::init()
     // Output - Uncomment this if you don't want to send processed data (in form of a matrix) to other plugins.
     // Also, this output stream will generate an online display in your plugin
     m_pBandPowerOutput = PluginOutputData<RealTimeMultiSampleArray>::create(this, "BandPowerOut", "BandPower output data");
-    m_pBandPowerOutput->data()->setName(this->getName());//Provide name to auto store widget settings
-    m_pBandPowerOutput->data()->setMultiArraySize(1);
+    m_pBandPowerOutput->measurementData()->setName(this->getName());//Provide name to auto store widget settings
+    m_pBandPowerOutput->measurementData()->setMultiArraySize(1);
 
     m_outputConnectors.append(m_pBandPowerOutput);
 
@@ -164,7 +163,7 @@ bool BandPower::stop()
     requestInterruption();
     wait(500);
 
-    m_pBandPowerOutput->data()->clear();
+    m_pBandPowerOutput->measurementData()->clear();
     m_pBandPowerBuffer->clear();
 
     return true;
@@ -172,7 +171,7 @@ bool BandPower::stop()
 
 //=============================================================================================================
 
-IPlugin::PluginType BandPower::getType() const
+AbstractPlugin::PluginType BandPower::getType() const
 {
     return _IAlgorithm;
 }
@@ -326,7 +325,7 @@ void BandPower::update(SCMEASLIB::Measurement::SPtr pMeasurement)
             //Init output - Uncomment this if you also uncommented the m_pDummyOutput in the constructor above
             //m_pBandPowerOutput->data()->initFromFiffInfo(m_pFiffInfo);
 
-            m_dDataSampFreq = m_pFiffInfo->sfreq;
+            m_dDataSampFreq = m_pFiffInfo_orig->sfreq;
 
             m_pFiffInfo->filename = "";
             m_pFiffInfo->bads.clear();
@@ -366,11 +365,17 @@ void BandPower::update(SCMEASLIB::Measurement::SPtr pMeasurement)
 
             m_pFiffInfo->file_id = FIFFLIB::FiffId::new_file_id(); //check if necessary
 
-            m_pFiffInfo->sfreq = pRTMSA->info()->sfreq/m_iNTimeSteps;
+            while(!(pRTMSA->getMultiSampleArray().size() > 0))
+            { }
 
-            m_pBandPowerOutput->data()->initFromFiffInfo(m_pFiffInfo);
+            if(m_iNTimeSteps == -1)
+                m_iNTimeSteps = pRTMSA->getMultiSampleArray().first().cols();
 
-            m_pBandPowerOutput->data()->setVisibility(true);
+            m_pFiffInfo->sfreq = m_dDataSampFreq/m_iNTimeSteps;
+
+            m_pBandPowerOutput->measurementData()->initFromFiffInfo(m_pFiffInfo);
+
+            m_pBandPowerOutput->measurementData()->setVisibility(true);
         }
 
         // Check if data is present
@@ -410,8 +415,8 @@ void BandPower::initPluginControlWidgets()
     connect(pBandPowerSettingsView,&BandPowerSettingsView::changeMethod,this,&BandPower::changeSpectrumMethod);
     connect(pBandPowerSettingsView,&BandPowerSettingsView::changeIntervallLength,this,&BandPower::changeIntervallLengthFactor);
     connect(pBandPowerSettingsView,&BandPowerSettingsView::changeDetrend,this,&BandPower::changeDetrendMethod);
-    connect(pBandPowerSettingsView,&BandPowerSettingsView::changeChannels,this,&BandPower::changeBandPowerChannels);
-    connect(pBandPowerSettingsView,&BandPowerSettingsView::changeBins,this,&BandPower::changeBandPowerBins);
+    //connect(pBandPowerSettingsView,&BandPowerSettingsView::changeChannels,this,&BandPower::changeBandPowerChannels);
+    //connect(pBandPowerSettingsView,&BandPowerSettingsView::changeBins,this,&BandPower::changeBandPowerBins);
 
     ARSettingsView* pARSettingsView = new ARSettingsView(QString("MNESCAN/%1/").arg(this->getName()));
 
@@ -554,7 +559,7 @@ void BandPower::run()
             //stepwidth = (m_dFreqMax - m_dFreqMin)/(matSpectrum.at(0).size() - 1); //check where the evaluation points lie
             //for (int i=0; i < matSpectrum.length(); ++i)
             //        meanbandpower(0,0) += 1e10*bandpowerFromSpectrumEntries(matSpectrum.at(i),stepwidth)/matSpectrum.length();
-            if(m_iBandPowerChannels <= matSpectrum.length())
+            if(m_iBandPowerChannels < matSpectrum.length())
                 qDebug() << "More channels selected than pre-defined! Only the first " << m_iBandPowerChannels << " are displayed!";
             for(int i=0; i<std::min(m_iBandPowerChannels,matSpectrum.length()); ++i){
                 bandpower.block(i*m_iBandPowerBins,0,m_iBandPowerBins,1) = matSpectrum.at(i);
@@ -573,7 +578,7 @@ void BandPower::run()
             matSpectrum = Spectral::psdFromTaperedSpectra(matTaperedSpectrum, vecTapWeights, iNSamples, dSampFreq, false);
 
             // Select frequencies that fall within the band
-            if(m_iBandPowerChannels <= matSpectrum.length())
+            if(m_iBandPowerChannels < matSpectrum.length())
                 qDebug() << "[BandPower::run] More channels selected than pre-defined! Only the first " << m_iBandPowerChannels << " are displayed!";
 
             double binwidth = (m_dFreqMax-m_dFreqMin)/static_cast<double>(m_iBandPowerBins);
@@ -593,9 +598,9 @@ void BandPower::run()
 
         //Send the data to the connected plugins and the online display
 
-        m_pBandPowerOutput->data()->setValue(bandpower);
+        m_pBandPowerOutput->measurementData()->setValue(bandpower);
 
-        qDebug() << "Power:" << bandpower(0,0);
+        //qDebug() << "Power:" << bandpower(0,0) << bandpower(1,0) << bandpower(2,0) << bandpower(3,0);
 
         //move matrix entries one block to the left
         if(t_NSampleMat.cols()/m_iNTimeSteps > 1)
