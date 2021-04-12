@@ -49,9 +49,7 @@
 //=============================================================================================================
 
 #include <QSharedPointer>
-#include <QPointer>
 #include <QAbstractItemModel>
-#include <QStandardItemModel>
 #include <QDebug>
 
 //=============================================================================================================
@@ -189,9 +187,9 @@ public:
     virtual int columnCount(const QModelIndex &parent = QModelIndex()) const override = 0;
 
 protected:
-    ModelPath                   m_modelPath;                /**< Path to model data in file structure */
+    ModelPath   m_modelPath;
 
-    bool                        m_bIsInit = false;          /**< Whether the model has been initialized. */
+    bool        m_bIsInit = false;          /**< Whether the model has been initialized. */
 };
 
 //=============================================================================================================

@@ -41,7 +41,7 @@
 
 #include "sourcelocalization_global.h"
 
-#include <anShared/Plugins/abstractplugin.h>
+#include <anShared/Interfaces/IPlugin.h>
 
 //=============================================================================================================
 // QT INCLUDES
@@ -75,12 +75,12 @@ namespace SOURCELOCALIZATIONPLUGIN
  *
  * @brief The sourcelocalization class provides a plugin for computing averages.
  */
-class SOURCELOCALIZATIONSHARED_EXPORT SourceLocalization : public ANSHAREDLIB::AbstractPlugin
+class SOURCELOCALIZATIONSHARED_EXPORT SourceLocalization : public ANSHAREDLIB::IPlugin
 {
     Q_OBJECT
     Q_PLUGIN_METADATA(IID "ansharedlib/1.0" FILE "sourcelocalization.json") //New Qt5 Plugin system replaces Q_EXPORT_PLUGIN2 macro
     // Use the Q_INTERFACES() macro to tell Qt's meta-object system about the interfaces
-    Q_INTERFACES(ANSHAREDLIB::AbstractPlugin)
+    Q_INTERFACES(ANSHAREDLIB::IPlugin)
 
 public:
     //=========================================================================================================
@@ -95,8 +95,8 @@ public:
      */
     ~SourceLocalization() override;
 
-    // AbstractPlugin functions
-    virtual QSharedPointer<AbstractPlugin> clone() const override;
+    // IPlugin functions
+    virtual QSharedPointer<IPlugin> clone() const override;
     virtual void init() override;
     virtual void unload() override;
     virtual QString getName() const override;

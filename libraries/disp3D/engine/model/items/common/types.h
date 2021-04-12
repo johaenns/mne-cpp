@@ -178,83 +178,83 @@ namespace Data3DTreeModelItemRoles
 
 // Metatype declaration for correct QVariant usage
 // DO NOT FORGET TO REGISTER THESE TYPES IF YOU WANT TO USE THEM IN SIGNAL SLOT/SLOT SYSTEM (SEE Data3DTreeModel initMetatypes())
-#ifndef metatype_matrixx3i
-#define metatype_matrixx3i
+#ifndef DISP3DLIB_metatype_matrixx3i
+#define DISP3DLIB_metatype_matrixx3i
 Q_DECLARE_METATYPE(Eigen::MatrixX3i);
 #endif
 
-#ifndef metatype_matrixXd
-#define metatype_matrixXd
+#ifndef DISP3DLIB_metatype_matrixXd
+#define DISP3DLIB_metatype_matrixXd
 Q_DECLARE_METATYPE(Eigen::MatrixXd);
 #endif
 
-#ifndef metatype_matrixx3f
-#define metatype_matrixx3f
+#ifndef DISP3DLIB_metatype_matrixx3f
+#define DISP3DLIB_metatype_matrixx3f
 Q_DECLARE_METATYPE(Eigen::MatrixX3f);
 #endif
 
-#ifndef metatype_matrixx4f
-#define metatype_matrixx4f
+#ifndef DISP3DLIB_metatype_matrixx4f
+#define DISP3DLIB_metatype_matrixx4f
 Q_DECLARE_METATYPE(Eigen::MatrixX4f);
 #endif
 
-#ifndef metatype_vectorxf
-#define metatype_vectorxf
+#ifndef DISP3DLIB_metatype_vectorxf
+#define DISP3DLIB_metatype_vectorxf
 Q_DECLARE_METATYPE(Eigen::VectorXf);
 #endif
 
-#ifndef metatype_vectorxi
-#define metatype_vectorxi
+#ifndef DISP3DLIB_metatype_vectorxi
+#define DISP3DLIB_metatype_vectorxi
 Q_DECLARE_METATYPE(Eigen::VectorXi);
 #endif
 
-#ifndef metatype_vectorxd
-#define metatype_vectorxd
+#ifndef DISP3DLIB_metatype_vectorxd
+#define DISP3DLIB_metatype_vectorxd
 Q_DECLARE_METATYPE(Eigen::VectorXd);
 #endif
 
-#ifndef metatype_rowvectorxf
-#define metatype_rowvectorxf
+#ifndef DISP3DLIB_metatype_rowvectorxf
+#define DISP3DLIB_metatype_rowvectorxf
 Q_DECLARE_METATYPE(Eigen::RowVectorXf);
 #endif
 
-#ifndef metatype_vector3f
-#define metatype_vector3f
+#ifndef DISP3DLIB_metatype_vector3f
+#define DISP3DLIB_metatype_vector3f
 Q_DECLARE_METATYPE(Eigen::Vector3f);
 #endif
 
-#ifndef metatype_fiffinfo
-#define metatype_fiffinfo
+#ifndef DISP3DLIB_metatype_fiffinfo
+#define DISP3DLIB_metatype_fiffinfo
 Q_DECLARE_METATYPE(FIFFLIB::FiffInfo);
 #endif
 
-#ifndef metatype_qvectorvector3f
-#define metatype_qvectorvector3f
+#ifndef DISP3DLIB_metatype_qvectorvector3f
+#define DISP3DLIB_metatype_qvectorvector3f
 Q_DECLARE_METATYPE(QVector<Eigen::Vector3f>);
 #endif
 
-#ifndef metatype_qvectorvectorint
-#define metatype_qvectorvectorint
+#ifndef DISP3DLIB_metatype_qvectorvectorint
+#define DISP3DLIB_metatype_qvectorvectorint
 Q_DECLARE_METATYPE(QVector<QVector<int> >);
 #endif
 
-#ifndef metatype_qvectorint
-#define metatype_qvectorint
+#ifndef DISP3DLIB_metatype_qvectorint
+#define DISP3DLIB_metatype_qvectorint
 Q_DECLARE_METATYPE(QVector<int>);
 #endif
 
-#ifndef metatype_sparsematf
-#define metatype_sparsematf
+#ifndef DISP3DLIB_metatype_sparsematf
+#define DISP3DLIB_metatype_sparsematf
 Q_DECLARE_METATYPE(Eigen::SparseMatrix<float>);
 #endif
 
-#ifndef metatype_sharedptrsparsematf
-#define metatype_sharedptrsparsematf
+#ifndef DISP3DLIB_metatype_sharedptrsparsematf
+#define DISP3DLIB_metatype_sharedptrsparsematf
 Q_DECLARE_METATYPE(QSharedPointer<Eigen::SparseMatrix<float> >);
 #endif
 
-#ifndef metatype_listlabel
-#define metatype_listlabel
+#ifndef DISP3DLIB_metatype_listlabel
+#define DISP3DLIB_metatype_listlabel
 Q_DECLARE_METATYPE(QList<FSLIB::Label>);
 #endif
 

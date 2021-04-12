@@ -260,9 +260,3 @@ void ModalitySelectionView::onUpdateModalityCheckbox(qint32 state)
     saveSettings();
 }
 
-//=============================================================================================================
-
-void ModalitySelectionView::clearView()
-{
-
-}

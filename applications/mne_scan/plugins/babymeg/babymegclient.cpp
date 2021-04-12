@@ -184,42 +184,45 @@ void BabyMEGClient::HescDisplay(double a)
 
 void BabyMEGClient::ConnectToBabyMEG()
 {
+    // return true: sucessfully connect to babyMEG server
+    //        false: fail.
     m_bSocketIsConnected = false;
-
     // Connect to the server of babyMEG [labview]
     qDebug()<< "Client is started!";
 
-    for(int i = 0; i < 10; i++) {
-        tcpSocket->connectToHost(name,port,QIODevice::ReadWrite);
+    if (!this->isRunning())
+    {
+        this->start();
+    }
 
-        if (tcpSocket->waitForConnected(5000)) {
+    for(int i = 0; i < 1; i++){
+        tcpSocket->connectToHost(name,port,QIODevice::ReadWrite);
+        if (tcpSocket->waitForConnected(5000))
+        {
             m_bSocketIsConnected = true;
             qDebug("Connect to BabyMEG Server ... Ok");
-
             //download parameters
             qDebug()<< "Send the initial parameter request";
-
-            if (tcpSocket->state()==QAbstractSocket::ConnectedState)  {
+            if (tcpSocket->state()==QAbstractSocket::ConnectedState)
+            {
                 buffer.clear();
 //                SendCommand("INFO");
                 SendCommand("DATA");
             }
-
             return;
-        } else{
+        }
+        else{
             qDebug("Connection to BabyMEG server failed");
             qDebug("Retry...");
         }
-
         qDebug("Please check the babyMEG server: if started");
     }
-
     return;
 }
 
 //=============================================================================================================
 
-void BabyMEGClient::DisconnectBabyMEG()
+void BabyMEGClient::DisConnectBabyMEG()
 {
     if(m_bSocketIsConnected && tcpSocket->state()==QAbstractSocket::ConnectedState)
         SendCommand("QUIT");

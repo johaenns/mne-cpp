@@ -161,7 +161,7 @@ public:
 
     //=========================================================================================================
     /**
-     * Stops the AbstractPlugin.
+     * Stops the IPlugin.
      * Pure virtual method.
      *
      * @return true if success, false otherwise

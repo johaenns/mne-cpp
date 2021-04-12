@@ -121,9 +121,9 @@ public:
 
     //=========================================================================================================
     /**
-     * Returns vector containing active AbstractSensor plugins.
+     * Returns vector containing active ISensor plugins.
      *
-     * @return reference to vector containing active AbstractSensor plugins.
+     * @return reference to vector containing active ISensor plugins.
      */
     IConnector* getActiveConnector();
 

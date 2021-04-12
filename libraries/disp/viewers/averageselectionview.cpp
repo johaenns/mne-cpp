@@ -290,10 +290,3 @@ void AverageSelectionView::onAverageSelectionColorChanged()
 
     saveSettings();
 }
-
-//=============================================================================================================
-
-void AverageSelectionView::clearView()
-{
-
-}

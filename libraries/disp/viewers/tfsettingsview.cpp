@@ -145,9 +145,3 @@ void TfSettingsView::onNumberTrialRowChanged()
     saveSettings();
 }
 
-//=============================================================================================================
-
-void TfSettingsView::clearView()
-{
-
-}

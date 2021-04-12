@@ -1,7 +1,7 @@
 ---
 title: Connectivity
 parent: Library API
-grand_parent: Development
+grand_parent: Develop
 nav_order: 3
 ---
 

@@ -70,13 +70,13 @@ using namespace UTILSLIB;
 
 bool RTPROCESSINGLIB::filterFile(QIODevice &pIODevice,
                                  QSharedPointer<FiffRawData> pFiffRawData,
-                                 int type,
+                                 FilterKernel::FilterType type,
                                  double dCenterfreq,
                                  double bandwidth,
                                  double dTransition,
                                  double dSFreq,
                                  int iOrder,
-                                 int designMethod,
+                                 FilterKernel::DesignMethod designMethod,
                                  const RowVectorXi& vecPicks,
                                  bool bUseThreads)
 {
@@ -193,13 +193,13 @@ bool RTPROCESSINGLIB::filterFile(QIODevice &pIODevice,
 //=============================================================================================================
 
 MatrixXd RTPROCESSINGLIB::filterData(const MatrixXd& mataData,
-                                     int type,
+                                     FilterKernel::FilterType type,
                                      double dCenterfreq,
                                      double bandwidth,
                                      double dTransition,
                                      double dSFreq,
                                      int iOrder,
-                                     int designMethod,
+                                     FilterKernel::DesignMethod designMethod,
                                      const RowVectorXi& vecPicks,
                                      bool bUseThreads,
                                      bool bKeepOverhead)
@@ -383,13 +383,13 @@ void RTPROCESSINGLIB::filterChannel(RTPROCESSINGLIB::FilterObject& channelDataTi
 //=============================================================================================================
 
 MatrixXd FilterOverlapAdd::calculate(const MatrixXd& mataData,
-                                     int type,
+                                     FilterKernel::FilterType type,
                                      double dCenterfreq,
                                      double bandwidth,
                                      double dTransition,
                                      double dSFreq,
                                      int iOrder,
-                                     int designMethod,
+                                     FilterKernel::DesignMethod designMethod,
                                      const RowVectorXi& vecPicks,
                                      bool bFilterEnd,
                                      bool bUseThreads,

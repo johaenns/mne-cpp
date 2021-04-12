@@ -63,10 +63,12 @@ using namespace FIFFLIB;
 
 BrainFlowBoard::BrainFlowBoard()
 : m_pBoardShim(NULL)
+, m_pChannels(NULL)
 , m_iBoardId((int)BoardIds::SYNTHETIC_BOARD)
 , m_pOutput(NULL)
 , m_iSamplingFreq(0)
 , m_sStreamerParams("")
+, m_iNumberChannels(0)
 , m_uiSamplesPerBlock(100)
 , m_pFiffInfo(QSharedPointer<FiffInfo>::create())
 {
@@ -93,7 +95,7 @@ void BrainFlowBoard::showSettings()
 
 //=============================================================================================================
 
-QSharedPointer<AbstractPlugin> BrainFlowBoard::clone() const
+QSharedPointer<IPlugin> BrainFlowBoard::clone() const
 {
     QSharedPointer<BrainFlowBoard> pClone(new BrainFlowBoard());
     return pClone;
@@ -104,7 +106,7 @@ QSharedPointer<AbstractPlugin> BrainFlowBoard::clone() const
 void BrainFlowBoard::init()
 {    
     m_pOutput = PluginOutputData<RealTimeMultiSampleArray>::create(this, "BrainFlowBoard", "BrainFlow Board Output");
-    m_pOutput->measurementData()->setName(this->getName());//Provide name to auto store widget settings
+    m_pOutput->data()->setName(this->getName());//Provide name to auto store widget settings
     m_outputConnectors.append(m_pOutput);
 
     BoardShim::set_log_file((char *)"brainflow_log.txt");
@@ -129,7 +131,7 @@ void BrainFlowBoard::setUpFiffInfo()
     //
     //Set number of channels, sampling frequency and high/-lowpass
     //
-    m_pFiffInfo->nchan = (int)m_vChannels.size();
+    m_pFiffInfo->nchan = m_iNumberChannels;
     m_pFiffInfo->sfreq = m_iSamplingFreq;
     m_pFiffInfo->highpass = 0.001f;
     m_pFiffInfo->lowpass = m_iSamplingFreq/2;
@@ -258,7 +260,7 @@ bool BrainFlowBoard::stop()
         }
         requestInterruption();
         wait(500);
-        m_pOutput->measurementData()->clear();
+        m_pOutput->data()->clear();
     } catch (const BrainFlowException &err) {
         BoardShim::log_message((int)LogLevels::LEVEL_ERROR, err.what());
         return false;
@@ -268,7 +270,7 @@ bool BrainFlowBoard::stop()
 
 //=============================================================================================================
 
-AbstractPlugin::PluginType BrainFlowBoard::getType() const
+IPlugin::PluginType BrainFlowBoard::getType() const
 {
     return _ISensor;
 }
@@ -311,19 +313,19 @@ void BrainFlowBoard::prepareSession(BrainFlowInputParams params,
         switch (dataType)
         {
             case 0:
-                m_vChannels = BoardShim::get_eeg_channels(boardId);
+                m_pChannels = BoardShim::get_eeg_channels(boardId, &m_iNumberChannels);
                 break;
             case 1:
-                m_vChannels = BoardShim::get_emg_channels(boardId);
+                m_pChannels = BoardShim::get_emg_channels(boardId, &m_iNumberChannels);
                 break;
             case 2:
-                m_vChannels = BoardShim::get_ecg_channels(boardId);
+                m_pChannels = BoardShim::get_ecg_channels(boardId, &m_iNumberChannels);
                 break;
             case 3:
-                m_vChannels = BoardShim::get_eog_channels(boardId);
+                m_pChannels = BoardShim::get_eog_channels(boardId, &m_iNumberChannels);
                 break;
             case 4:
-                m_vChannels = BoardShim::get_eda_channels(boardId);
+                m_pChannels = BoardShim::get_eda_channels(boardId, &m_iNumberChannels);
                 break;
             default:
                 throw BrainFlowException ("unsupported data type", (int)BrainFlowExitCodes::UNSUPPORTED_BOARD_ERROR);
@@ -335,16 +337,19 @@ void BrainFlowBoard::prepareSession(BrainFlowInputParams params,
 
         setUpFiffInfo();
 
-        m_pOutput->measurementData()->initFromFiffInfo(m_pFiffInfo);
-        m_pOutput->measurementData()->setMultiArraySize(1);
+        m_pOutput->data()->initFromFiffInfo(m_pFiffInfo);
+        m_pOutput->data()->setMultiArraySize(1);
 
         msgBox.setText("Streaming session is ready");
     } catch (const BrainFlowException &err) {
         BoardShim::log_message((int)LogLevels::LEVEL_ERROR, err.what());
         msgBox.setText("Invalid parameters. Check logs for details.");
 
+        delete[] m_pChannels;
         delete m_pBoardShim;
+        m_pChannels = NULL;
         m_pBoardShim = NULL;
+        m_iNumberChannels = 0;
     }
 
     msgBox.exec();
@@ -381,11 +386,11 @@ void BrainFlowBoard::run()
     unsigned long lSamplingPeriod = (unsigned long)(1000000.0 / m_iSamplingFreq) * iMinSamples;
     int numRows = BoardShim::get_num_rows(m_iBoardId);
 
-    int iSampleIterator, i, j;
+    int iSampleIterator, iReceivedSamples, i, j;
     iSampleIterator = 0;
-    Eigen::VectorXd vec(m_vChannels.size());
-    Eigen::MatrixXd matrix (m_vChannels.size(), m_uiSamplesPerBlock);
-    BrainFlowArray<double, 2> data;
+    Eigen::VectorXd vec(m_iNumberChannels);
+    Eigen::MatrixXd matrix (m_iNumberChannels, m_uiSamplesPerBlock);
+    double **data = NULL;
     QList<Eigen::VectorXd> lSampleBlockBuffer;
 
     while(!isInterruptionRequested()) {
@@ -395,16 +400,16 @@ void BrainFlowBoard::run()
         //get samples from device until the complete matrix is filled, i.e. the samples per block size is met
         while(iSampleIterator < m_uiSamplesPerBlock && !isInterruptionRequested()) {
             //Get sample block from device
-            data = m_pBoardShim->get_board_data ();
-            if (data.get_size(1) == 0) {
+            data = m_pBoardShim->get_board_data (&iReceivedSamples);
+            if (iReceivedSamples == 0) {
                 continue;
             }
 
             //Write the received samples to an extra buffer, so that they are not getting lost if too many samples were received.
             //These are then written to the next matrix (block)
-            for(i = 0; i < data.get_size(1); ++i) {
-                for(j = 0; j < m_vChannels.size(); ++j) {
-                    vec(j) = data.at(m_vChannels[j], i)/1000000.0;
+            for(i = 0; i < iReceivedSamples; ++i) {
+                for(j = 0; j < m_iNumberChannels; ++j) {
+                    vec(j) = data[m_pChannels[j]][i]/1000000.0;
                 }
 
                 lSampleBlockBuffer.push_back(vec);
@@ -420,9 +425,15 @@ void BrainFlowBoard::run()
 
                 iSampleIterator++;
             }
+
+            for (int i = 0; i < numRows; i++) {
+                delete[] data[i];
+            }
+
+            delete[] data;
         }
 
-        m_pOutput->measurementData()->setValue(matrix);
+        m_pOutput->data()->setValue(matrix);
     }
 }
 
@@ -438,11 +449,14 @@ void BrainFlowBoard::releaseSession(bool useQmessage)
         }
     }
     delete m_pBoardShim;
+    delete[] m_pChannels;
 
     m_pBoardShim = nullptr;
+    m_pChannels = nullptr;
     m_iBoardId = (int)BoardIds::SYNTHETIC_BOARD;
     m_iSamplingFreq = 0;
     m_sStreamerParams = "";
+    m_iNumberChannels = 0;
 
     if (useQmessage)
     {

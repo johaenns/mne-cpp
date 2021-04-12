@@ -138,12 +138,6 @@ public:
 
     //=========================================================================================================
     /**
-     * Slot called when an item should be removed.
-     */
-    void onTreeViewRemoveItem(const QModelIndex &index);
-
-    //=========================================================================================================
-    /**
      * Slot called when tree view description visibilty changed.
      */
     void onTreeViewDescriptionHide();
@@ -259,12 +253,6 @@ protected:
      * @param[in] value      The newly picked light intensity value.
      */
     void onLightIntensityChanged(double value);
-
-    //=========================================================================================================
-    /**
-     * Clears the view
-     */
-    void clearView();
 
     Ui::Control3DViewWidget*    m_pUi;                      /**< The pointer to the QtDesigner ui class. */
 

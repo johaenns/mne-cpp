@@ -48,7 +48,6 @@ TEMPLATE = subdirs
 SUBDIRS += \
     test_coregistration \
     test_dipole_fit \
-    test_fiff_coord_trans \
     test_fiff_rwr \
     test_fiff_mne_types_io \
     test_filtering \
@@ -57,13 +56,11 @@ SUBDIRS += \
     test_fiff_cov \
     test_fiff_digitizer \
     test_mne_msh_display_surface_set \
-    test_mne_project_to_surface \
 
     qtHaveModule(charts) {
         SUBDIRS += \
             test_interpolation \
             test_geometryinfo \
             test_spectral_connectivity \
-            test_mne_anonymize \
-            test_edf2fiff_rwr
+            test_mne_anonymize
     }

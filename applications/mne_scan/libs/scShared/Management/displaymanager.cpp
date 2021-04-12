@@ -87,7 +87,7 @@ DisplayManager::~DisplayManager()
 
 //=============================================================================================================
 
-QWidget* DisplayManager::show(AbstractPlugin::OutputConnectorList &outputConnectorList,
+QWidget* DisplayManager::show(IPlugin::OutputConnectorList &outputConnectorList,
                               QSharedPointer<QTime>& pT,
                               QList< QAction* >& qListActions)
 {
@@ -171,9 +171,9 @@ QWidget* DisplayManager::show(AbstractPlugin::OutputConnectorList &outputConnect
             vboxLayout->addWidget(rtcWidget);
             rtcWidget->init();
         } else if (pPluginOutputConnector.dynamicCast< PluginOutputData<RealTimeSpectrum> >()) {
-            QSharedPointer<RealTimeSpectrum> pRealTimeSpectrum = pPluginOutputConnector.dynamicCast< PluginOutputData<RealTimeSpectrum> >()->measurementData();
+            QSharedPointer<RealTimeSpectrum>* pRealTimeSpectrum = &pPluginOutputConnector.dynamicCast< PluginOutputData<RealTimeSpectrum> >()->data();
 
-            RealTimeSpectrumWidget* fsWidget = new RealTimeSpectrumWidget(pRealTimeSpectrum, pT, newDisp);
+            RealTimeSpectrumWidget* fsWidget = new RealTimeSpectrumWidget(*pRealTimeSpectrum, pT, newDisp);
 
             qListActions.append(fsWidget->getDisplayActions());
 

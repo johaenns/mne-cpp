@@ -62,10 +62,6 @@ namespace Qt3DCore {
     class QEntity;
 }
 
-namespace DISP3DLIB {
-    class GeometryMultiplier;
-}
-
 //=============================================================================================================
 // DEFINE NAMESPACE DISP3DLIB
 //=============================================================================================================
@@ -125,12 +121,6 @@ protected:
      * @param[in] tECDSet     The dipole set data.
      */
     void plotDipoles(const INVERSELIB::ECDSet& tECDSet);
-
-private:
-
-    QPointer<GeometryMultiplier> m_pDipolMesh;
-
-    QPointer<MetaTreeItem> m_pItemNumDipoles;
 };
 
 //=============================================================================================================

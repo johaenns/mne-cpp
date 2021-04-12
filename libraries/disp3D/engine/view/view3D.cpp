@@ -66,12 +66,6 @@
 #include <Qt3DExtras/QSphereMesh>
 #include <Qt3DRender/QRenderSettings>
 
-#include <QObjectPicker>
-#include <QPickingSettings>
-#include <QRenderSettings>
-#include <QPickEvent>
-#include <QPickTriangleEvent>
-
 //=============================================================================================================
 // USED NAMESPACES
 //=============================================================================================================
@@ -91,8 +85,6 @@ View3D::View3D()
 , m_p3DObjectsEntity(new Qt3DCore::QEntity(m_pRootEntity))
 , m_pLightEntity(new Qt3DCore::QEntity(m_pRootEntity))
 , m_pCamera(this->camera())
-, m_pPicker(new Qt3DRender::QObjectPicker(m_pRootEntity))
-, m_pCamController(new OrbitalCameraController(m_pRootEntity))
 {
     //Root entity
     this->setRootEntity(m_pRootEntity);
@@ -112,53 +104,13 @@ View3D::View3D()
     m_pCamera->setViewCenter(QVector3D(0.0f, 0.0f, 0.0f));
     m_pCamera->setUpVector(QVector3D(0.0f, 1.0f, 0.0f));
     m_pCamera->tiltAboutViewCenter(180);
-    m_pCamera->lens()->setPerspectiveProjection(45.0f, this->width()/this->height(), 0.01f, 5000.0f);
     m_pFrameGraph->setCamera(m_pCamera);
 
-    m_pCamController->setCamera(m_pCamera);
+    OrbitalCameraController *pCamController = new OrbitalCameraController(m_pRootEntity);
+    pCamController->setCamera(m_pCamera);
 
     createCoordSystem(m_pRootEntity);
     toggleCoordAxis(false);
-
-    // initialize object picking and disable it by default to save resources
-    initObjectPicking();
-    activatePicker(true);
-}
-
-
-//=============================================================================================================
-
-void View3D::initObjectPicking()
-{
-    // add object picker to root entity
-    m_pRootEntity->addComponent(m_pPicker);
-
-    // emit signal whenever pick event occured
-    connect(m_pPicker, &Qt3DRender::QObjectPicker::pressed,
-            this, &View3D::handlePickerPress);
-
-    // define renderSettings
-    this->renderSettings()->setActiveFrameGraph(m_pFrameGraph);
-    this->renderSettings()->pickingSettings()->setPickMethod(Qt3DRender::QPickingSettings::PrimitivePicking);
-    this->renderSettings()->pickingSettings()->setPickResultMode(Qt3DRender::QPickingSettings::NearestPick);
-    this->renderSettings()->pickingSettings()->setWorldSpaceTolerance(0.00000001f);
-}
-
-//=============================================================================================================
-
-void View3D::activatePicker(const bool bActivatePicker)
-{
-    m_pPicker->setEnabled(bActivatePicker);
-}
-
-//=============================================================================================================
-
-void View3D::handlePickerPress(Qt3DRender::QPickEvent *qPickEvent)
-{
-    // only catch click events for left mouse button
-    if(qPickEvent->button() == qPickEvent->LeftButton) {
-        emit pickEventOccured(qPickEvent);
-    }
 }
 
 //=============================================================================================================
@@ -217,16 +169,16 @@ void View3D::setSceneColor(const QColor& colSceneColor)
 
 //=============================================================================================================
 
-void View3D::toggleCoordAxis(bool bChecked)
+void View3D::toggleCoordAxis(bool checked)
 {
-    m_pCoordSysEntity->setEnabled(bChecked);
+    m_pCoordSysEntity->setEnabled(checked);
 }
 
 //=============================================================================================================
 
-void View3D::showFullScreen(bool bChecked)
+void View3D::showFullScreen(bool checked)
 {
-    if(bChecked) {
+    if(checked) {
         this->Qt3DWindow::showFullScreen();
     }
     else {
@@ -358,40 +310,39 @@ void View3D::createCoordSystem(Qt3DCore::QEntity* parent)
 
 //=============================================================================================================
 
-void View3D::setCameraRotation(float fAngle)
+void View3D::startModelRotationRecursive(QObject* pObject)
 {
-    m_pCamera->setPosition(QVector3D(0.0f, -0.4f, -0.25f));
-    m_pCamera->setViewCenter(QVector3D(0.0f, 0.0f, 0.0f));
-    m_pCamera->setUpVector(QVector3D(0.0f, 1.0f, 0.0f));
-    m_pCamera->tiltAboutViewCenter(180);
-    QQuaternion quat = QQuaternion::QQuaternion::fromEulerAngles(0,0,fAngle);
-    m_pCamera->rotateAboutViewCenter(quat);
+    //TODO this won't work with QEntities
+    if(Renderable3DEntity* pItem = dynamic_cast<Renderable3DEntity*>(pObject)) {
+        QPropertyAnimation *anim = new QPropertyAnimation(pItem, QByteArrayLiteral("rotZ"));
+        anim->setDuration(30000);
+        anim->setStartValue(QVariant::fromValue(pItem->rotZ()));
+        anim->setEndValue(QVariant::fromValue(pItem->rotZ() + 360.0f));
+        anim->setLoopCount(-1);
+        anim->start();
+        m_lPropertyAnimations << anim;
+    }
+
+    for(int i = 0; i < pObject->children().size(); ++i) {
+        startModelRotationRecursive(pObject->children().at(i));
+    }
 }
 
 //=============================================================================================================
 
-//Qt3DCore::QTransform View3D::getCameraTransform() {
-//    Qt3DCore::QTransform trans = *new Qt3DCore::QTransform(m_pCamera->transform());
-//    return trans;
-//}
-
-//=============================================================================================================
-
-void View3D::startStopCameraRotation(bool bChecked)
+void View3D::startStopModelRotation(bool checked)
 {
-    if(!m_pCameraAnimation) {
-        m_pCameraAnimation = new QPropertyAnimation(m_pCamController, "rotating");
-        m_pCameraAnimation->setStartValue(QVariant::fromValue(1));
-        m_pCameraAnimation->setEndValue(QVariant::fromValue(10000));
-        m_pCameraAnimation->setDuration(10000);
-        m_pCameraAnimation->setLoopCount(-1);
-    }
-
-    if(bChecked) {
+    if(checked) {
         //Start animation
-        m_pCameraAnimation->start();
+        m_lPropertyAnimations.clear();
+
+        for(int i = 0; i < m_p3DObjectsEntity->children().size(); ++i) {
+            startModelRotationRecursive(m_p3DObjectsEntity->children().at(i));
+        }
     }
     else {
-        m_pCameraAnimation->stop();
+        for(int i = 0; i < m_lPropertyAnimations.size(); ++i) {
+            m_lPropertyAnimations.at(i)->stop();
+        }
     }
 }

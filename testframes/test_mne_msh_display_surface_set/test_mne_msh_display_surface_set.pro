@@ -41,16 +41,15 @@ QT += testlib network concurrent
 QT -= gui
 
 CONFIG   += console
-!contains(MNECPP_CONFIG, withAppBundles) {
-    CONFIG -= app_bundle
-}
-
-DESTDIR =  $${MNE_BINARY_DIR}
+CONFIG   -= app_bundle
 
 TARGET = test_mne_msh_display_surface_set
+
 CONFIG(debug, debug|release) {
     TARGET = $$join(TARGET,,,d)
 }
+
+DESTDIR =  $${MNE_BINARY_DIR}
 
 contains(MNECPP_CONFIG, static) {
     CONFIG += static
@@ -73,6 +72,8 @@ CONFIG(debug, debug|release) {
 SOURCES += \
     test_mne_msh_display_surface_set.cpp
 
+HEADERS += \
+
 INCLUDEPATH += $${EIGEN_INCLUDE_DIR}
 INCLUDEPATH += $${MNE_INCLUDE_DIR}
 
@@ -81,12 +82,17 @@ contains(MNECPP_CONFIG, withCodeCov) {
     QMAKE_LFLAGS += --coverage
 }
 
+# Deploy dependencies
+win32:!contains(MNECPP_CONFIG, static) {
+    EXTRA_ARGS =
+    DEPLOY_CMD = $$winDeployAppArgs($${TARGET},$${MNE_BINARY_DIR},$${MNE_LIBRARY_DIR},$${EXTRA_ARGS})
+    QMAKE_POST_LINK += $${DEPLOY_CMD}
+}
 unix:!macx {
     QMAKE_RPATHDIR += $ORIGIN/../lib
 }
-
 macx {
-    QMAKE_LFLAGS += -Wl,-rpath,@executable_path/../lib
+    QMAKE_LFLAGS += -Wl,-rpath,../lib
 }
 
 # Activate FFTW backend in Eigen for non-static builds only

@@ -61,7 +61,7 @@ namespace SCSHAREDLIB
 // FORWARD DECLARATIONS
 //=============================================================================================================
 
-class AbstractPlugin;
+class IPlugin;
 
 //=============================================================================================================
 /**
@@ -85,7 +85,7 @@ public:
      * @param[in] name       connection name
      * @param[in] descr      connection description
      */
-    PluginConnector(AbstractPlugin *parent, const QString &name, const QString &descr);
+    PluginConnector(IPlugin *parent, const QString &name, const QString &descr);
     
     //=========================================================================================================
     /**
@@ -120,7 +120,7 @@ public:
 signals:
 
 protected:
-    AbstractPlugin* m_pPlugin;  /**< Plugin to which connector belongs to */
+    IPlugin* m_pPlugin;  /**< Plugin to which connector belongs to */
 
     //actual obeserver pattern - think of an other implementation --> currently similiar to OpenWalnut
     //figure out how to Qt signal/slot

@@ -40,7 +40,8 @@
 
 #include "analyzecore.h"
 #include "mainwindow.h"
-#include "../libs/anShared/Plugins/abstractplugin.h"
+#include "../libs/anShared/Interfaces/IPlugin.h"
+#include "../libs/anShared/Management/analyzesettings.h"
 #include "../libs/anShared/Management/analyzedata.h"
 #include "../libs/anShared/Management/pluginmanager.h"
 #include "../libs/anShared/Management/eventmanager.h"
@@ -106,6 +107,7 @@ AnalyzeCore::AnalyzeCore(QObject* parent)
 
     registerMetaTypes();
 
+    initGlobalSettings();
     initGlobalData();
 
     initEventSystem();
@@ -170,6 +172,13 @@ void AnalyzeCore::showMainWindow()
 
 //=============================================================================================================
 
+void AnalyzeCore::initGlobalSettings()
+{
+    m_analyzeSettings = AnalyzeSettings::SPtr::create();
+}
+
+//=============================================================================================================
+
 void AnalyzeCore::initGlobalData()
 {
     m_analyzeData = AnalyzeData::SPtr::create();
@@ -188,7 +197,7 @@ void AnalyzeCore::initPluginManager()
 {
     m_pPluginManager = QSharedPointer<PluginManager>::create();
     m_pPluginManager->loadPluginsFromDirectory(qApp->applicationDirPath() + pluginsDir);
-    m_pPluginManager->initPlugins(m_analyzeData);
+    m_pPluginManager->initPlugins(m_analyzeSettings, m_analyzeData);
 }
 
 //=============================================================================================================

@@ -42,7 +42,6 @@
 #include "babymegsquidcontroldgl.h"
 
 #include "../babymeg.h"
-#include "../babymegclient.h"
 
 //=============================================================================================================
 // QT INCLUDES
@@ -66,22 +65,27 @@ using namespace BABYMEGPLUGIN;
 // DEFINE MEMBER METHODS
 //=============================================================================================================
 
-BabyMEGSetupWidget::BabyMEGSetupWidget(BabyMEG* p_pBabyMEG,
-                                       QWidget* parent)
+BabyMEGSetupWidget::BabyMEGSetupWidget(BabyMEG* p_pBabyMEG, QWidget* parent)
 : QWidget(parent)
 , m_pBabyMEG(p_pBabyMEG)
+, m_bIsInit(false)
 {
     ui.setupUi(this);
 
-    connect(m_pBabyMEG, &BabyMEG::cmdConnectionChanged,
-            this, &BabyMEGSetupWidget::setConnectionStatus);
-
-    connect(ui.m_pPushButton_Connect, &QPushButton::click,
-            this, &BabyMEGSetupWidget::onConnectionPressed);
+    connect(m_pBabyMEG, &BabyMEG::cmdConnectionChanged, this,
+            &BabyMEGSetupWidget::cmdConnectionChanged);
 
     //rt server fiffInfo received
     connect(m_pBabyMEG, &BabyMEG::fiffInfoAvailable, this,
-            &BabyMEGSetupWidget::setSamplingFrequency);
+            &BabyMEGSetupWidget::fiffInfoReceived);
+
+    //SQUID Control
+    connect(ui.m_qPushButtonSqdCtrl, &QPushButton::released,
+            this, &BabyMEGSetupWidget::showSqdCtrlDialog);
+
+    ui.m_qPushButtonSqdCtrl->setVisible(false);
+
+    this->init();
 }
 
 //=============================================================================================================
@@ -92,37 +96,29 @@ BabyMEGSetupWidget::~BabyMEGSetupWidget()
 
 //=============================================================================================================
 
-void BabyMEGSetupWidget::setConnectionStatus(bool bConnectionStatus)
+void BabyMEGSetupWidget::init()
 {
-    if(bConnectionStatus) {
-        ui.m_label_connectionStatus->setText("BabyMEG is connected");
-        ui.m_pPushButton_Connect->setText("Disconnect");
-    } else {
-        ui.m_label_connectionStatus->setText("BabyMEG is disconnected");
-        ui.m_pPushButton_Connect->setText("Connect");
-    }
-
 }
 
 //=============================================================================================================
 
-void BabyMEGSetupWidget::setSamplingFrequency()
+void BabyMEGSetupWidget::cmdConnectionChanged(bool p_bConnectionStatus)
 {
-    if(m_pBabyMEG->m_pFiffInfo) {
+    Q_UNUSED(p_bConnectionStatus)
+}
+
+//=============================================================================================================
+
+void BabyMEGSetupWidget::fiffInfoReceived()
+{
+    if(m_pBabyMEG->m_pFiffInfo)
         this->ui.m_qLabel_sps->setText(QString("%1").arg(m_pBabyMEG->m_pFiffInfo->sfreq));
-    }
 }
 
 //=============================================================================================================
 
-void BabyMEGSetupWidget::onConnectionPressed()
+void BabyMEGSetupWidget::showSqdCtrlDialog()
 {
-    if(m_pBabyMEG) {
-        if(ui.m_pPushButton_Connect->text() == "Connect") {
-            m_pBabyMEG->m_pMyClient->ConnectToBabyMEG();
-        } else if(ui.m_pPushButton_Connect->text() == "Disconnect") {
-            m_pBabyMEG->m_pMyClient->DisconnectBabyMEG();
-        }
-    }
+//    BabyMEGSQUIDControlDgl m_pSQUIDCtrlDlg(m_pBabyMEG,this);
+//    m_pSQUIDCtrlDlg.exec();
 }
-

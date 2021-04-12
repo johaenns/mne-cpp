@@ -47,7 +47,7 @@
 #include <scShared/Management/pluginconnectorconnection.h>
 #include <scShared/Management/pluginoutputdata.h>
 #include <scShared/Management/plugininputdata.h>
-#include <scShared/Plugins/abstractplugin.h>
+#include <scShared/Interfaces/IPlugin.h>
 
 #include <utils/generics/applicationlogger.h>
 

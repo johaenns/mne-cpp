@@ -1,7 +1,7 @@
 ---
 title: Acquisition plugins in MNE Scan
 parent: MNE Scan
-grand_parent: Development
+grand_parent: Develop
 nav_order: 1
 ---
 # Acquisition Plugins in MNE Scan

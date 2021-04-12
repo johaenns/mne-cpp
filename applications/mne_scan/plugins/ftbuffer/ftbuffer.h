@@ -46,8 +46,8 @@
 
 #include "ftbuffproducer.h"
 
-#include <scShared/Plugins/abstractsensor.h>
-#include <scShared/Plugins/abstractalgorithm.h>
+#include <scShared/Interfaces/ISensor.h>
+#include <scShared/Interfaces/IAlgorithm.h>
 
 #include <scMeas/realtimemultisamplearray.h>
 
@@ -91,11 +91,11 @@ class FtBuffProducer;
  *
  * @brief Handles Ftbuffer data received from FtBuffProducer and outputs it.
  */
-class FTBUFFER_EXPORT FtBuffer : public SCSHAREDLIB::AbstractSensor
+class FTBUFFER_EXPORT FtBuffer : public SCSHAREDLIB::ISensor
 {
     Q_OBJECT
     Q_PLUGIN_METADATA(IID "scsharedlib/1.0" FILE "ftbuffer.json")
-    Q_INTERFACES(SCSHAREDLIB::AbstractSensor)
+    Q_INTERFACES(SCSHAREDLIB::ISensor)
 
     friend class FtBufferSetupWidget;
     friend class FtBuffProducer;
@@ -118,7 +118,7 @@ public:
     /**
      * Clone the plugin
      */
-    virtual QSharedPointer<AbstractPlugin> clone() const;
+    virtual QSharedPointer<IPlugin> clone() const;
 
     //=========================================================================================================
     /**
@@ -134,7 +134,7 @@ public:
 
     //=========================================================================================================
     /**
-     * Starts the AbstractSensor.
+     * Starts the ISensor.
      * Pure virtual method inherited by IModule.
      *
      * @return true if success, false otherwise
@@ -143,7 +143,7 @@ public:
 
     //=========================================================================================================
     /**
-     * Stops the AbstractSensor.
+     * Stops the ISensor.
      * Pure virtual method inherited by IModule.
      *
      * @return true if success, false otherwise
@@ -155,7 +155,7 @@ public:
      * Returns the plugin type.
      * Pure virtual method inherited by IModule.
      *
-     * @return type of the AbstractSensor
+     * @return type of the ISensor
      */
     virtual PluginType getType() const;
 
@@ -164,13 +164,13 @@ public:
      * Returns the plugin name.
      * Pure virtual method inherited by IModule.
      *
-     * @return the name of the AbstractSensor.
+     * @return the name of the ISensor.
      */
     virtual QString getName() const;
 
     //=========================================================================================================
     /**
-     * Returns the set up widget for configuration of AbstractSensor.
+     * Returns the set up widget for configuration of ISensor.
      * Pure virtual method inherited by IModule.
      *
      * @return the setup widget.

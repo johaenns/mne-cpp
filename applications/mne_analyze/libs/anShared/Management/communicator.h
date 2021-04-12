@@ -65,7 +65,7 @@ namespace ANSHAREDLIB
 // FORWARD DECLARATIONS
 //=============================================================================================================
 
-class AbstractPlugin;
+class IPlugin;
 
 //=========================================================================================================
 /**
@@ -98,7 +98,7 @@ public:
      *
      * @param[in] plugin      The Plugins to connect to.
      */
-    Communicator(AbstractPlugin* plugin);
+    Communicator(IPlugin* plugin);
 
     //=========================================================================================================
     /**

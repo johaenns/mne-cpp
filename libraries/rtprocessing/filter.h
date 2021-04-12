@@ -76,7 +76,7 @@ namespace RTPROCESSINGLIB
 {
 
 typedef struct {
-    FilterKernel filterKernel;
+    RTPROCESSINGLIB::FilterKernel filterKernel;
     int iRow;
     Eigen::RowVectorXd vecData;
 } FilterObject;
@@ -101,13 +101,13 @@ typedef struct {
  */
 RTPROCESINGSHARED_EXPORT bool filterFile(QIODevice& pIODevice,
                                          QSharedPointer<FIFFLIB::FiffRawData> pFiffRawData,
-                                         int type,
+                                         RTPROCESSINGLIB::FilterKernel::FilterType type,
                                          double dCenterfreq,
                                          double dBandwidth,
                                          double dTransition,
                                          double dSFreq,
                                          int iOrder = 4096,
-                                         int designMethod = FilterKernel::m_designMethods.indexOf(FilterParameter("Cosine")),
+                                         RTPROCESSINGLIB::FilterKernel::DesignMethod designMethod = RTPROCESSINGLIB::FilterKernel::Cosine,
                                          const Eigen::RowVectorXi &vecPicks = Eigen::RowVectorXi(),
                                          bool bUseThreads = true);
 
@@ -150,13 +150,13 @@ RTPROCESINGSHARED_EXPORT bool filterFile(QIODevice& pIODevice,
  * @return The filtered data in form of a matrix.
  */
 RTPROCESINGSHARED_EXPORT Eigen::MatrixXd filterData(const Eigen::MatrixXd& matData,
-                                                    int type,
+                                                    RTPROCESSINGLIB::FilterKernel::FilterType type,
                                                     double dCenterfreq,
                                                     double dBandwidth,
                                                     double dTransition,
                                                     double dSFreq,
                                                     int iOrder = 1024,
-                                                    int designMethod = FilterKernel::m_designMethods.indexOf(FilterParameter("Cosine")),
+                                                    RTPROCESSINGLIB::FilterKernel::DesignMethod designMethod = RTPROCESSINGLIB::FilterKernel::Cosine,
                                                     const Eigen::RowVectorXi &vecPicks = Eigen::RowVectorXi(),
                                                     bool bUseThreads = true,
                                                     bool bKeepOverhead = false);
@@ -238,13 +238,13 @@ public:
      * @return The filtered data in form of a matrix.
      */
     Eigen::MatrixXd calculate(const Eigen::MatrixXd& matData,
-                              int type,
+                              RTPROCESSINGLIB::FilterKernel::FilterType type,
                               double dCenterfreq,
                               double dBandwidth,
                               double dTransition,
                               double dSFreq,
                               int iOrder = 1024,
-                              int designMethod = FilterKernel::m_designMethods.indexOf(FilterParameter("Cosine")),
+                              RTPROCESSINGLIB::FilterKernel::DesignMethod designMethod = RTPROCESSINGLIB::FilterKernel::Cosine,
                               const Eigen::RowVectorXi &vecPicks = Eigen::RowVectorXi(),
                               bool bFilterEnd = true,
                               bool bUseThreads = true,

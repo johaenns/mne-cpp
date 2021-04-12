@@ -76,7 +76,7 @@ Q_DECLARE_METATYPE(QVector<lsl::stream_info>);
 //=============================================================================================================
 
 LSLAdapter::LSLAdapter()
-: AbstractSensor()
+: ISensor()
 , m_fSamplingFrequency(-1.0f)
 , m_iNumberChannels(-1)
 , m_iOutputBlockSize(100)
@@ -106,9 +106,9 @@ LSLAdapter::~LSLAdapter()
 
 //=============================================================================================================
 
-QSharedPointer<AbstractPlugin> LSLAdapter::clone() const
+QSharedPointer<IPlugin> LSLAdapter::clone() const
 {
-    return qSharedPointerCast<AbstractPlugin>(QSharedPointer<LSLAdapter>(new LSLAdapter()));
+    return qSharedPointerCast<IPlugin>(QSharedPointer<LSLAdapter>(new LSLAdapter()));
 }
 
 //=============================================================================================================
@@ -123,7 +123,7 @@ void LSLAdapter::init()
             &m_producerThread, &QThread::quit, Qt::DirectConnection);  // apparently a direct connection is needed in order to avoid a crash upon 'stop'
 
     // make RTMSA accessible
-    m_pRTMSA->measurementData()->setName(this->getName());
+    m_pRTMSA->data()->setName(this->getName());
     m_outputConnectors.append(m_pRTMSA);
 
     // connect finished signal for background lsl stream scanning
@@ -166,9 +166,9 @@ bool LSLAdapter::start()
         prepareFiffInfo(m_currentStream);
 
         // set the channel size of the RTMSA - this needs to be done here and NOT in the init() function because the user can change the number of channels during runtime
-        m_pRTMSA->measurementData()->initFromFiffInfo(m_pFiffInfo);
-        m_pRTMSA->measurementData()->setMultiArraySize(1);
-        m_pRTMSA->measurementData()->setVisibility(true);
+        m_pRTMSA->data()->initFromFiffInfo(m_pFiffInfo);
+        m_pRTMSA->data()->setMultiArraySize(1);
+        m_pRTMSA->data()->setVisibility(true);
 
         // start producer
         m_pProducer->setOutputBlockSize(m_iOutputBlockSize);
@@ -187,7 +187,7 @@ bool LSLAdapter::start()
 bool LSLAdapter::stop()
 {
     // Clear all data in the buffer connected to displays and other plugins
-    m_pRTMSA->measurementData()->clear();
+    m_pRTMSA->data()->clear();
 
     // stop the producer and wait for it
     m_pProducer->stop();

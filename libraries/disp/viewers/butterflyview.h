@@ -48,7 +48,7 @@
 
 #include <QMap>
 #include <QWidget>
-#if !defined(NO_QOPENGLWIDGET)
+#if !defined(NO_OPENGL)
 #include <QOpenGLWidget>
 #endif
 
@@ -79,7 +79,7 @@ class ChannelInfoModel;
  *
  * @brief The ButterflyView class provides a butterfly view.
  */
-#if !defined(NO_QOPENGLWIDGET)
+#if !defined(NO_OPENGL)
 class DISPSHARED_EXPORT ButterflyView : public QOpenGLWidget
 #else
 class DISPSHARED_EXPORT ButterflyView : public QWidget
@@ -119,14 +119,6 @@ public:
      * @param [in] model     The new evoked set model.
      */
     void setEvokedSetModel(QSharedPointer<EvokedSetModel> model);
-
-    //=========================================================================================================
-    /**
-     * Returns the currently set EvokedSetModel
-     *
-     * @return the currently set EvokedSetModel
-     */
-    QSharedPointer<EvokedSetModel> getEvokedSetModel();
 
     //=========================================================================================================
     /**
@@ -262,12 +254,6 @@ public:
 
     //=========================================================================================================
     /**
-     * Shows all channels in view
-     */
-    void showAllChannels();
-
-    //=========================================================================================================
-    /**
      * Saves all important settings of this view via QSettings.
      */
     void saveSettings();
@@ -278,12 +264,6 @@ public:
      */
     void loadSettings();
 
-    //=========================================================================================================
-    /**
-     * Clears the view
-     */
-    void clearView();
-
 protected:
     //=========================================================================================================
     /**
@@ -292,7 +272,7 @@ protected:
      *
      * @param [in] event pointer to PaintEvent -> not used.
      */
-    #if !defined(NO_QOPENGLWIDGET)
+    #if !defined(NO_OPENGL)
     virtual void paintGL();
     #else
     virtual void paintEvent(QPaintEvent *event);

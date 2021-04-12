@@ -127,15 +127,7 @@ public:
      *
      * @param [in] pEvokedSetModel     The new evoked set model.
      */
-    void setEvokedSetModel(QSharedPointer<EvokedSetModel> pEvokedSetModel);
-
-    //=========================================================================================================
-    /**
-     * Returns the currently set EvokedSetModel
-     *
-     * @return the currently set EvokedSetModel
-     */
-    QSharedPointer<EvokedSetModel> getEvokedSetModel();
+    void setEvokedSetModel(QSharedPointer<EvokedSetModel> &pEvokedSetModel);
 
     //=========================================================================================================
     /**
@@ -250,12 +242,6 @@ public:
      * Loads and inits all important settings of this view via QSettings.
      */
     void loadSettings();
-
-    //=========================================================================================================
-    /**
-     * Clears the view
-     */
-    void clearView();
 
 protected:
     //=========================================================================================================

@@ -42,7 +42,7 @@
 
 #include "averaging_global.h"
 
-#include <scShared/Plugins/abstractalgorithm.h>
+#include <scShared/Interfaces/IAlgorithm.h>
 #include <utils/generics/circularbuffer.h>
 
 #include <fiff/fiff_evoked_set.h>
@@ -81,12 +81,12 @@ namespace AVERAGINGPLUGIN
  *
  * @brief The Averaging class provides a Averaging algorithm structure.
  */
-class AVERAGINGSHARED_EXPORT Averaging : public SCSHAREDLIB::AbstractAlgorithm
+class AVERAGINGSHARED_EXPORT Averaging : public SCSHAREDLIB::IAlgorithm
 {
     Q_OBJECT
     Q_PLUGIN_METADATA(IID "scsharedlib/1.0" FILE "averaging.json") //New Qt5 Plugin system replaces Q_EXPORT_PLUGIN2 macro
     // Use the Q_INTERFACES() macro to tell Qt's meta-object system about the interfaces
-    Q_INTERFACES(SCSHAREDLIB::AbstractAlgorithm)
+    Q_INTERFACES(SCSHAREDLIB::IAlgorithm)
 
     friend class AveragingSettingsWidget;
 
@@ -114,10 +114,10 @@ public:
      * Reimplemented virtual functions
      */
     virtual void unload();
-    virtual QSharedPointer<SCSHAREDLIB::AbstractPlugin> clone() const;
+    virtual QSharedPointer<SCSHAREDLIB::IPlugin> clone() const;
     virtual bool start();
     virtual bool stop();
-    virtual SCSHAREDLIB::AbstractPlugin::PluginType getType() const;
+    virtual SCSHAREDLIB::IPlugin::PluginType getType() const;
     virtual QString getName() const;
     virtual QWidget* setupWidget();
     void update(SCMEASLIB::Measurement::SPtr pMeasurement);

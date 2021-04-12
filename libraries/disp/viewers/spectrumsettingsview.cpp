@@ -194,10 +194,3 @@ void SpectrumSettingsView::updateProcessingMode(ProcessingMode mode)
             break;
     }
 }
-
-//=============================================================================================================
-
-void SpectrumSettingsView::clearView()
-{
-
-}

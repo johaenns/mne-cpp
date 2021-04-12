@@ -109,6 +109,12 @@ public:
 
     //=========================================================================================================
     /**
+     * Destructor.
+     */
+    virtual ~FiffRawView();
+
+    //=========================================================================================================
+    /**
      * Resets the view to its default settings.
      */
     void reset();
@@ -185,7 +191,7 @@ public:
     /**
      * distanceTimeSpacerChanged changes the distance of the time spacers
      *
-     * @param[in] iValue the new distance for the time spacers
+     * @param iValue the new distance for the time spacers
      */
     void setDistanceTimeSpacer(int iValue);
 
@@ -284,25 +290,7 @@ public:
      */
     void updateProcessingMode(ProcessingMode mode);
 
-    //=========================================================================================================
-    /**
-     * Shows channels based on input selectedChannelsIndexes
-     *
-     * @param [in] selectedChannelsIndexes      list of channels to be shown
-     */
     void showSelectedChannelsOnly(const QList<int> selectedChannelsIndexes);
-
-    //=========================================================================================================
-    /**
-     * Shows all channels in the view
-     */
-    void showAllChannels();
-
-    //=========================================================================================================
-    /**
-     * Clears the view
-     */
-    void clearView();
 
 signals:
     //=========================================================================================================
@@ -335,27 +323,15 @@ private:
     /**
      * Creates the lables for sample/time values displayed beneath the data view
      */
-    void createBottomLabels();
+    void createLabels();
 
     //=========================================================================================================
     /**
      * Triggers the update of the update label based on the data viewer horizontal positon (not on iValue)
      *
-     * @param[in] iValue   Horizontal scroll bar position (unused)
+     * @param [in] iValue   Horizontal scroll bar position (unused)
      */
-    void updateTimeLabels(int iValue);
-
-    //=========================================================================================================
-    /**
-     * Updates file labels with info from current set model
-     */
-    void updateFileLabel();
-
-    //=========================================================================================================
-    /**
-     * Updates the information about the filter shown in the filterLabel.
-     */
-    void updateFilterLabel();
+    void updateLabels(int iValue);
 
     //=========================================================================================================
     /**
@@ -367,31 +343,29 @@ private:
     /**
      * This tells the model where the view currently is vertically.
      *
-     * @param[in] newScrollPosition Absolute sample number.
+     * @param newScrollPosition Absolute sample number.
      */
     void updateVerticalScrollPosition(qint32 newScrollPosition);
 
+    QPointer<QTableView>                                m_pTableView;                   /**< Pointer to table view ui element */
 
-    QPointer<QTableView>                                m_pTableView;                   /**< Pointer to table view ui element. */
+    QSharedPointer<ANSHAREDLIB::FiffRawViewModel>       m_pModel;                       /**< Pointer to associated Model */
 
-    QSharedPointer<ANSHAREDLIB::FiffRawViewModel>       m_pModel;                       /**< Pointer to associated Model. */
-
-    QSharedPointer<FiffRawViewDelegate>                 m_pDelegate;                    /**< Pointer to associated Delegate. */
+    QSharedPointer<FiffRawViewDelegate>                 m_pDelegate;                    /**< Pointer to associated Delegate */
 
     QMap<qint32,float>                                  m_qMapChScaling;                /**< Channel scaling values. */
 
-    float                                               m_fDefaultSectionSize;          /**< Default row height. */
-    float                                               m_fZoomFactor;                  /**< Zoom factor. */
-    float                                               m_fLastClickedSample;           /**< Stores last clicked sample on screen. */
+    float                                               m_fDefaultSectionSize;          /**< Default row height */
+    float                                               m_fZoomFactor;                  /**< Zoom factor */
+    float                                               m_fLastClickedSample;            /**< Stores last clicked sample on screen */
 
-    qint32                                              m_iT;                           /**< Display window size in seconds. */
+    qint32                                              m_iT;                           /**< Display window size in seconds */
 
-    QScroller*                                          m_pKineticScroller;             /**< Used for kinetic scrolling through data view. */
+    QScroller*                                          m_pKineticScroller;             /**< Used for kinetic scrolling through data view */
 
-    QLabel*                                             m_pInitialTimeLabel;            /**< Left 'Sample | Seconds' display label. */
-    QLabel*                                             m_pEndTimeLabel;                /**< Right 'Sample | Seconds' display label. */
-    QLabel*                                             m_pFileLabel;                   /**< File name and path, Fs and duration. */
-    QLabel*                                             m_pFilterLabel;                 /**< Short filter description to be shown under the time-series. */
+    QLabel*                                             m_pLeftLabel;                   /**< Left 'Sample | Seconds' display label */
+    QLabel*                                             m_pRightLabel;                  /**< Right 'Sample | Seconds' display label */
+
 signals:
     void tableViewDataWidthChanged(int iWidth);
 };

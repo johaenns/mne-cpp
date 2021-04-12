@@ -58,9 +58,10 @@
 
 namespace ANSHAREDLIB
 {
-    class AbstractPlugin;
+    class IPlugin;
     class PluginManager;
     class AnalyzeData;
+    class AnalyzeSettings;
 }
 
 //=============================================================================================================
@@ -116,6 +117,12 @@ public:
 
     //=========================================================================================================
     /**
+     * Initializes the global settings
+     */
+    void initGlobalSettings();
+
+    //=========================================================================================================
+    /**
      * Initializes the global data base
      */
     void initGlobalData();
@@ -164,6 +171,7 @@ private:
     void registerMetaTypes();
 
     QSharedPointer<ANSHAREDLIB::PluginManager>      m_pPluginManager;       /**< Holds plugin manager. */
+    QSharedPointer<ANSHAREDLIB::AnalyzeSettings>    m_analyzeSettings;      /**< The global settings. */
     QSharedPointer<ANSHAREDLIB::AnalyzeData>        m_analyzeData;          /**< The global data base. */
 
     QCommandLineParser                              m_cmdLineParser;        /**< The command line parser. */

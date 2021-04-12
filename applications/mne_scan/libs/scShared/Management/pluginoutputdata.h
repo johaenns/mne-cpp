@@ -76,7 +76,7 @@ public:
      * @param[in] name       connection name
      * @param[in] descr      connection description
      */
-    PluginOutputData(AbstractPlugin *parent,
+    PluginOutputData(IPlugin *parent,
                      const QString &name,
                      const QString &descr);
 
@@ -96,7 +96,7 @@ public:
      *
      * @return the created PluginOutputData
      */
-    static inline QSharedPointer< PluginOutputData<T> > create(AbstractPlugin *parent,
+    static inline QSharedPointer< PluginOutputData<T> > create(IPlugin *parent,
                                                                const QString &name,
                                                                const QString &descr);
 
@@ -106,7 +106,7 @@ public:
      *
      * @return the measurement
      */
-    inline QSharedPointer<T> measurementData();
+    inline QSharedPointer<T> &data();
 
     void update();
 
@@ -119,7 +119,7 @@ private:
 //=============================================================================================================
 
 template <class T>
-inline QSharedPointer< PluginOutputData<T> > PluginOutputData<T>::create(AbstractPlugin *parent, const QString &name, const QString &descr)
+inline QSharedPointer< PluginOutputData<T> > PluginOutputData<T>::create(IPlugin *parent, const QString &name, const QString &descr)
 {
     QSharedPointer< PluginOutputData<T> > pPluginOutputData(new PluginOutputData<T>(parent, name, descr));
     return pPluginOutputData;
@@ -128,7 +128,7 @@ inline QSharedPointer< PluginOutputData<T> > PluginOutputData<T>::create(Abstrac
 //=============================================================================================================
 
 template <class T>
-inline QSharedPointer<T> PluginOutputData<T>::measurementData()
+inline QSharedPointer<T> &PluginOutputData<T>::data()
 {
     return m_pMeasurement;
 }

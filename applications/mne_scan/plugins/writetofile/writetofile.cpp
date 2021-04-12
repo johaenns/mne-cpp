@@ -108,9 +108,9 @@ WriteToFile::~WriteToFile()
 
 //=============================================================================================================
 
-QSharedPointer<AbstractPlugin> WriteToFile::clone() const
+QSharedPointer<IPlugin> WriteToFile::clone() const
 {
-    QSharedPointer<AbstractPlugin> pWriteToFileClone(new WriteToFile);
+    QSharedPointer<IPlugin> pWriteToFileClone(new WriteToFile);
     return pWriteToFileClone;
 }
 
@@ -154,7 +154,7 @@ bool WriteToFile::stop()
 
 //=============================================================================================================
 
-AbstractPlugin::PluginType WriteToFile::getType() const
+IPlugin::PluginType WriteToFile::getType() const
 {
     return _IAlgorithm;
 }
@@ -289,7 +289,7 @@ void WriteToFile::run()
                     }
 
                     if(m_pOutfid) {
-                        m_pOutfid->write_raw_buffer(matData, m_mCals);
+                        m_pOutfid->write_raw_buffer(matData);
                     }
                 } else {
                     size = 0;
@@ -392,10 +392,10 @@ void WriteToFile::toggleRecordingFile()
 
         //Start/Prepare writing process. Actual writing is done in run() method.
         m_mutex.lock();
+        RowVectorXd cals;
         m_pOutfid = FiffStream::start_writing_raw(m_qFileOut,
                                                   *m_pFiffInfo,
-                                                  m_mCals);
-
+                                                  cals);
         fiff_int_t first = 0;
         m_pOutfid->write_int(FIFF_FIRST_SAMPLE, &first);
         m_mutex.unlock();
@@ -414,7 +414,7 @@ void WriteToFile::toggleRecordingFile()
 }
 
 //=============================================================================================================
-#include <iostream>
+
 void WriteToFile::splitRecordingFile()
 {
     //qDebug() << "Split recording file";
@@ -438,13 +438,13 @@ void WriteToFile::splitRecordingFile()
 
     //start next file
     m_qFileOut.setFileName(nextFileName);
+    RowVectorXd cals;
     MatrixXi sel;
     m_pOutfid = FiffStream::start_writing_raw(m_qFileOut,
                                               *m_pFiffInfo,
-                                              m_mCals,
+                                              cals,
                                               sel,
                                               false);
-
     fiff_int_t first = 0;
     m_pOutfid->write_int(FIFF_FIRST_SAMPLE, &first);
 }

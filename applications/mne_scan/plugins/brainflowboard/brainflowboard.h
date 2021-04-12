@@ -39,13 +39,11 @@
 // INCLUDES
 //=============================================================================================================
 
-#include <vector>
-
 #include "brainflowboard_global.h"
 
 #include "board_shim.h"
 
-#include <scShared/Plugins/abstractsensor.h>
+#include <scShared/Interfaces/ISensor.h>
 
 //=============================================================================================================
 // QT INCLUDES
@@ -84,24 +82,24 @@ namespace BRAINFLOWBOARDPLUGIN
  *
  * @brief The BrainFlowBoard class provides a plugin for connecting to BrainFlow devices.
  */
-class BRAINFLOWBOARD_EXPORT BrainFlowBoard : public SCSHAREDLIB::AbstractSensor
+class BRAINFLOWBOARD_EXPORT BrainFlowBoard : public SCSHAREDLIB::ISensor
 {
     Q_OBJECT
 
     Q_PLUGIN_METADATA(IID "scsharedlib/1.0" FILE "brainflowboard.json")
-    Q_INTERFACES(SCSHAREDLIB::AbstractSensor)
+    Q_INTERFACES(SCSHAREDLIB::ISensor)
 
 public:
     BrainFlowBoard();
     virtual ~BrainFlowBoard();
 
-    virtual QSharedPointer<AbstractPlugin> clone() const;
+    virtual QSharedPointer<IPlugin> clone() const;
     virtual void init();
     virtual void unload();
     void setUpFiffInfo();
     virtual bool start();
     virtual bool stop();
-    virtual AbstractPlugin::PluginType getType() const;
+    virtual IPlugin::PluginType getType() const;
     virtual QString getName() const;
     virtual QWidget* setupWidget();
 
@@ -117,13 +115,17 @@ protected:
     virtual void run();
 
 private:
-    std::string         m_sStreamerParams;
-    BoardShim*          m_pBoardShim;
-    QAction*            m_pShowSettingsAction;
-    int                 m_iBoardId;
-    int                 m_uiSamplesPerBlock;            /**< The samples per block defined by the user via the GUI.*/
-    std::vector<int>    m_vChannels;
-    int                 m_iSamplingFreq;
+    std::string     m_sStreamerParams;
+
+    BoardShim*      m_pBoardShim;
+
+    QAction*        m_pShowSettingsAction;
+
+    int     m_iBoardId;
+    int     m_iNumberChannels;
+    int     m_uiSamplesPerBlock;            /**< The samples per block defined by the user via the GUI.*/
+    int*    m_pChannels;
+    int     m_iSamplingFreq;
 
     QSharedPointer<SCSHAREDLIB::PluginOutputData<SCMEASLIB::RealTimeMultiSampleArray> > m_pOutput;
     QSharedPointer<FIFFLIB::FiffInfo>   m_pFiffInfo;        /**< Fiff measurement info.*/

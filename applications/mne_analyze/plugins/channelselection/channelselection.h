@@ -41,7 +41,7 @@
 
 #include "channelselection_global.h"
 
-#include <anShared/Plugins/abstractplugin.h>
+#include <anShared/Interfaces/IPlugin.h>
 
 //=============================================================================================================
 // QT INCLUDES
@@ -86,12 +86,12 @@ namespace CHANNELSELECTIONPLUGIN
  *
  * @brief The channelselection class provides a view with all currently loaded models.
  */
-class CHANNELSELECTIONSHARED_EXPORT ChannelSelection : public ANSHAREDLIB::AbstractPlugin
+class CHANNELSELECTIONSHARED_EXPORT ChannelSelection : public ANSHAREDLIB::IPlugin
 {
     Q_OBJECT
     Q_PLUGIN_METADATA(IID "ansharedlib/1.0" FILE "channelselection.json") //New Qt5 Plugin system replaces Q_EXPORT_PLUGIN2 macro
     // Use the Q_INTERFACES() macro to tell Qt's meta-object system about the interfaces
-    Q_INTERFACES(ANSHAREDLIB::AbstractPlugin)
+    Q_INTERFACES(ANSHAREDLIB::IPlugin)
 
 public:
     //=========================================================================================================
@@ -106,8 +106,8 @@ public:
      */
     virtual ~ChannelSelection() override;
 
-    // AbstractPlugin functions
-    virtual QSharedPointer<AbstractPlugin> clone() const override;
+    // IPlugin functions
+    virtual QSharedPointer<IPlugin> clone() const override;
     virtual void init() override;
     virtual void unload() override;
     virtual QString getName() const override;
@@ -134,14 +134,6 @@ private:
      * @param [in] pNewModel    new loaded model
      */
     void onModelChanged(QSharedPointer<ANSHAREDLIB::AbstractModel> pNewModel);
-
-    //=========================================================================================================
-    /**
-     * Handles clearing view if currently used model is being removed
-     *
-     * @param [in] pRemovedModel    Pointer to model being removed
-     */
-    void onModelRemoved(QSharedPointer<ANSHAREDLIB::AbstractModel> pRemovedModel);
 
     //=========================================================================================================
     /**

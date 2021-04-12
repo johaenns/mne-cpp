@@ -67,7 +67,7 @@ namespace SCMEASLIB
 /**
  * DECLARE CLASS RealTimeMultiSampleArray -> ToDo check feasibilty of QAbstractTableModel
  *
- * @brief The RealTimeMultiSampleArray class is the base class of every RealTimeMultiSampleArray Measurement.
+ * @brief The RealTimeMultiSampleArrayNew class is the base class of every RealTimeMultiSampleArrayNew Measurement.
  */
 class SCMEASSHARED_EXPORT RealTimeMultiSampleArray : public Measurement
 {
@@ -79,13 +79,13 @@ public:
 
     //=========================================================================================================
     /**
-     * Constructs a RealTimeMultiSampleArray.
+     * Constructs a RealTimeMultiSampleArrayNew.
      */
     explicit RealTimeMultiSampleArray(QObject *parent = 0);
 
     //=========================================================================================================
     /**
-     * Destroys the RealTimeMultiSampleArray.
+     * Destroys the RealTimeMultiSampleArrayNew.
      */
     virtual ~RealTimeMultiSampleArray();
 
@@ -97,7 +97,7 @@ public:
 
     //=========================================================================================================
     /**
-     * Inits RealTimeMultiSampleArray and adds uiNumChannels empty channel information
+     * Inits RealTimeMultiSampleArrayNew and adds uiNumChannels empty channel information
      *
      * @param [in] uiNumChannels     the number of channels to init.
      */
@@ -107,9 +107,9 @@ public:
     /**
      * Init channel infos using fiff info
      *
-     * @param[in] pFiffInfo     Info to init from
+     * @param[in] p_pFiffInfo     Info to init from
      */
-    void initFromFiffInfo(FIFFLIB::FiffInfo::SPtr pFiffInfo);
+    void initFromFiffInfo(FIFFLIB::FiffInfo::SPtr &p_pFiffInfo);
 
     //=========================================================================================================
     /**
@@ -137,19 +137,19 @@ public:
 
     //=========================================================================================================
     /**
-     * Sets the sampling rate of the RealTimeMultiSampleArray Measurement.
+     * Sets the sampling rate of the RealTimeMultiSampleArrayNew Measurement.
      *
-     * @param[in] fSamplingRate the sampling rate of the RealTimeMultiSampleArray.
+     * @param[in] dSamplingRate the sampling rate of the RealTimeMultiSampleArrayNew.
      */
-    inline void setSamplingRate(float fSamplingRate);
+    inline void setSamplingRate(double dSamplingRate);
 
     //=========================================================================================================
     /**
-     * Returns the sampling rate of the RealTimeMultiSampleArray Measurement.
+     * Returns the sampling rate of the RealTimeMultiSampleArrayNew Measurement.
      *
-     * @return the sampling rate of the RealTimeMultiSampleArray.
+     * @return the sampling rate of the RealTimeMultiSampleArrayNew.
      */
-    inline float getSamplingRate() const;
+    inline double getSamplingRate() const;
 
     //=========================================================================================================
     /**
@@ -173,7 +173,7 @@ public:
      *
      * @return the reference to the orig FiffInfo.
      */
-    inline FIFFLIB::FiffInfo::SPtr info();
+    inline FIFFLIB::FiffInfo::SPtr& info();
 
     //=========================================================================================================
     /**
@@ -213,7 +213,7 @@ private:
     FIFFLIB::FiffInfo::SPtr     m_pFiffInfo_orig;   /**< Original Fiff Info if initialized by fiff info. */
 
     QString                     m_sXMLLayoutFile;   /**< Layout file name. */
-    float                       m_fSamplingRate;    /**< Sampling rate of the RealTimeSampleArray.*/
+    double                      m_dSamplingRate;    /**< Sampling rate of the RealTimeSampleArray.*/
     qint32                      m_iMultiArraySize;  /**< Sample size of the multi sample array.*/
     QList<Eigen::MatrixXd>      m_matSamples;       /**< The multi sample array.*/
     bool                        m_bChInfoIsInit;    /**< If channel info is initialized.*/
@@ -257,18 +257,18 @@ inline void RealTimeMultiSampleArray::setXMLLayoutFile(const QString& layout)
 
 //=============================================================================================================
 
-inline void RealTimeMultiSampleArray::setSamplingRate(float fSamplingRate)
+inline void RealTimeMultiSampleArray::setSamplingRate(double dSamplingRate)
 {
     QMutexLocker locker(&m_qMutex);
-    m_fSamplingRate = fSamplingRate;
+    m_dSamplingRate = dSamplingRate;
 }
 
 //=============================================================================================================
 
-inline float RealTimeMultiSampleArray::getSamplingRate() const
+inline double RealTimeMultiSampleArray::getSamplingRate() const
 {
     QMutexLocker locker(&m_qMutex);
-    return m_fSamplingRate;
+    return m_dSamplingRate;
 }
 
 //=============================================================================================================
@@ -289,7 +289,7 @@ inline QList<RealTimeSampleArrayChInfo>& RealTimeMultiSampleArray::chInfo()
 
 //=============================================================================================================
 
-inline FIFFLIB::FiffInfo::SPtr RealTimeMultiSampleArray::info()
+inline FIFFLIB::FiffInfo::SPtr& RealTimeMultiSampleArray::info()
 {
     QMutexLocker locker(&m_qMutex);
     return m_pFiffInfo_orig;
@@ -325,4 +325,4 @@ inline const QList<Eigen::MatrixXd>& RealTimeMultiSampleArray::getMultiSampleArr
 
 Q_DECLARE_METATYPE(SCMEASLIB::RealTimeMultiSampleArray::SPtr)
 
-#endif // REALTIMEMULTISAMPLEARRAY_H
+#endif // REALTIMEMULTISAMPLEARRAYNEW_H

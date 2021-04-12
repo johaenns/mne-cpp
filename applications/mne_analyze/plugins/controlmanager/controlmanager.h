@@ -40,7 +40,7 @@
 //=============================================================================================================
 
 #include "controlmanager_global.h"
-#include <anShared/Plugins/abstractplugin.h>
+#include <anShared/Interfaces/IPlugin.h>
 
 //=============================================================================================================
 // QT INCLUDES
@@ -61,14 +61,7 @@ namespace ANSHAREDLIB {
 
 namespace DISPLIB{
     class ApplyToView;
-    class Control3DView;
 }
-
-#ifndef WASMBUILD
-namespace DISP3DLIB {
-    class Data3DTreeModel;
-}
-#endif
 
 //=============================================================================================================
 // DEFINE NAMESPACE SURFERPLUGIN
@@ -83,12 +76,12 @@ namespace CONTROLMANAGERPLUGIN
  *
  * @brief The ControlManager class provides a view with all currently loaded models.
  */
-class CONTROLMANAGERSHARED_EXPORT ControlManager : public ANSHAREDLIB::AbstractPlugin
+class CONTROLMANAGERSHARED_EXPORT ControlManager : public ANSHAREDLIB::IPlugin
 {
     Q_OBJECT
     Q_PLUGIN_METADATA(IID "ansharedlib/1.0" FILE "controlmanager.json") //New Qt5 Plugin system replaces Q_EXPORT_PLUGIN2 macro
     // Use the Q_INTERFACES() macro to tell Qt's meta-object system about the interfaces
-    Q_INTERFACES(ANSHAREDLIB::AbstractPlugin)
+    Q_INTERFACES(ANSHAREDLIB::IPlugin)
 
 public:
     //=========================================================================================================
@@ -103,8 +96,8 @@ public:
      */
     virtual ~ControlManager() override;
 
-    // AbstractPlugin functions
-    virtual QSharedPointer<AbstractPlugin> clone() const override;
+    // IPlugin functions
+    virtual QSharedPointer<IPlugin> clone() const override;
     virtual void init() override;
     virtual void unload() override;
     virtual QString getName() const override;
@@ -171,80 +164,11 @@ private:
      */
     void onMakeScreenshot(const QString& imageType);
 
-    #ifndef WASMBUILD
-    //=========================================================================================================
-    /**
-     * Sets 3D model for the 3D controls
-     *
-     * @param [in] pModel   new 3D Model
-     */
-    void init3DGui(QSharedPointer<DISP3DLIB::Data3DTreeModel> pModel);
-    #endif
+    QPointer<ANSHAREDLIB::Communicator>     m_pCommu;
 
-    //=========================================================================================================
-    /**
-     * Sends scene color via the event manager
-     *
-     * @param [in] color    new scene color
-     */
-    void onSceneColorChange(const QColor& color);
-
-    //=========================================================================================================
-    /**
-     * Send rotation toggle via event manager
-     *
-     * @param [in] bRotationChanged     rotation toggle
-     */
-    void onRotationChanged(bool bRotationChanged);
-
-    //=========================================================================================================
-    /**
-     * Send coordinate axis toggle via event manager
-     *
-     * @param [in] bShowCoordAxis   toggle coord axis
-     */
-    void onShowCoordAxis(bool bShowCoordAxis);
-
-    //=========================================================================================================
-    /**
-     * Send fullscreen toggle via event manager
-     *
-     * @param [in] bShowFullScreen      toggle fullscreen
-     */
-    void onShowFullScreen(bool bShowFullScreen);
-
-    //=========================================================================================================
-    /**
-     * Send light color via the event manager
-     *
-     * @param [in] color    new light color
-     */
-    void onLightColorChanged(const QColor& color);
-
-    //=========================================================================================================
-    /**
-     * Send light intensity via the event manager
-     *
-     * @param [in] value    new light intensity
-     */
-    void onLightIntensityChanged(double value);
-
-    //=========================================================================================================
-    /**
-     * Send screenshot toggle via event manager
-     */
-    void onTakeScreenshotChanged();
-
-    QPointer<ANSHAREDLIB::Communicator>         m_pCommu;                   /**< Communicator to send events trhoug hevent manager */
-
-    #ifndef WASMBUILD
-    DISPLIB::Control3DView*                     m_pControl3DView;           /**< Controls for 3d View */
-    #endif
-
-    DISPLIB::ApplyToView*                       m_pApplyToView;             /**< Controls for selecting views to apply settings */
-    ANSHAREDLIB::ScalingParameters              m_ScalingParameters;        /**< Controls for scaling */
-    ANSHAREDLIB::ViewParameters                 m_ViewParameters;           /**< Struct for 2D view settings */
-    ANSHAREDLIB::View3DParameters               m_View3DParameters;         /**< Struct for 3D view settings */
+    DISPLIB::ApplyToView*                   m_pApplyToView;
+    ANSHAREDLIB::ScalingParameters          m_ScalingParameters;
+    ANSHAREDLIB::ViewParameters             m_ViewParmeters;
 };
 
 //=============================================================================================================

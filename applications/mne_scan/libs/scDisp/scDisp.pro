@@ -37,22 +37,23 @@ include(../../../../mne-cpp.pri)
 
 TEMPLATE = lib
 
-QT += widgets concurrent xml svg 3dextras opengl
-
 CONFIG += skip_target_version_ext
+
+QT += widgets concurrent xml svg 3dextras opengl
 
 DEFINES += SCDISP_LIBRARY
 
-DESTDIR = $${MNE_LIBRARY_DIR}
+contains(MNECPP_CONFIG, noOpenGL) {
+    DEFINES += NO_OPENGL
+    QT -= opengl
+}
 
 TARGET = scDisp
 CONFIG(debug, debug|release) {
     TARGET = $$join(TARGET,,,d)
 }
 
-contains(MNECPP_CONFIG, noQOpenGLWidget) {
-    DEFINES += NO_QOPENGLWIDGET
-}
+DESTDIR = $${MNE_LIBRARY_DIR}
 
 contains(MNECPP_CONFIG, static) {
     CONFIG += staticlib
@@ -105,8 +106,24 @@ HEADERS += \
     realtimespectrumwidget.h \
     realtime3dwidget.h \
 
+FORMS += \
+
 RESOURCES += \
     scDisp.qrc
+
+RESOURCE_FILES +=\
+    $${ROOT_DIR}/resources/mne_scan/plugins/noisereduction/SPHARA/BabyMEG_SPHARA_InvEuclidean_Inner.txt \
+    $${ROOT_DIR}/resources/mne_scan/plugins/noisereduction/SPHARA/BabyMEG_SPHARA_InvEuclidean_Outer.txt \
+    $${ROOT_DIR}/resources/mne_scan/plugins/noisereduction/SPHARA/Current_SPHARA_EEG.txt \
+    $${ROOT_DIR}/resources/mne_scan/plugins/noisereduction/SPHARA/Duke64Dry.txt \
+    $${ROOT_DIR}/resources/mne_scan/plugins/noisereduction/SPHARA/Vectorview_SPHARA_InvEuclidean_Grad.txt \
+    $${ROOT_DIR}/resources/mne_scan/plugins/noisereduction/SPHARA/Vectorview_SPHARA_InvEuclidean_Mag.txt \
+
+# Copy resource files from repository to bin resource folder
+COPY_CMD = $$copyResources($${RESOURCE_FILES})
+QMAKE_POST_LINK += $${COPY_CMD}
+
+UI_DIR = $${PWD}
 
 INCLUDEPATH += $${EIGEN_INCLUDE_DIR}
 INCLUDEPATH += $${MNE_INCLUDE_DIR}
@@ -118,12 +135,17 @@ header_files.path = $${MNE_INSTALL_INCLUDE_DIR}/scDisp
 
 INSTALLS += header_files
 
+OTHER_FILES +=
+
 win32:!contains(MNECPP_CONFIG, static) {
-    QMAKE_POST_LINK += $$QMAKE_COPY $$shell_path($${MNE_LIBRARY_DIR}/$${TARGET}.dll) $${MNE_BINARY_DIR}
+    # Deploy/Copy library to bin folder manually (windeployqt only takes care of qt and system libraries)
+    EXTRA_ARGS =
+    DEPLOY_CMD = $$winDeployLibArgs($${TARGET},$${MNE_BINARY_DIR},$${MNE_LIBRARY_DIR},$${EXTRA_ARGS})
+    QMAKE_POST_LINK += $${DEPLOY_CMD}
 }
 
 macx {
-    QMAKE_LFLAGS_SONAME = -Wl,-install_name,@rpath/
+    QMAKE_LFLAGS += -Wl,-rpath,../lib
 }
 
 # Activate FFTW backend in Eigen for non-static builds only

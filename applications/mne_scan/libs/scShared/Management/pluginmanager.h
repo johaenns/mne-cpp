@@ -69,9 +69,9 @@ namespace SCSHAREDLIB
 // SCSHAREDLIB FORWARD DECLARATIONS
 //=============================================================================================================
 
-class AbstractPlugin;
-class AbstractSensor;
-class AbstractAlgorithm;
+class IPlugin;
+class ISensor;
+class IAlgorithm;
 class IIO;
 
 //=============================================================================================================
@@ -129,23 +129,23 @@ public:
      *
      * @return reference to vector containing all plugins.
      */
-    inline const QVector<AbstractPlugin*>& getPlugins();
+    inline const QVector<IPlugin*>& getPlugins();
 
     //=========================================================================================================
     /**
-     * Returns vector containing AbstractSensor plugins.
+     * Returns vector containing ISensor plugins.
      *
-     * @return reference to vector containing AbstractSensor plugins.
+     * @return reference to vector containing ISensor plugins.
      */
-    inline const QVector<AbstractSensor*>& getSensorPlugins();
+    inline const QVector<ISensor*>& getSensorPlugins();
 
     //=========================================================================================================
     /**
-     * Returns vector containing AbstractAlgorithm plugins
+     * Returns vector containing IAlgorithm plugins
      *
      * @return reference to vector containing IRTAlgorithm plugins
      */
-    inline const QVector<AbstractAlgorithm*>& getAlgorithmPlugins();
+    inline const QVector<IAlgorithm*>& getAlgorithmPlugins();
 
     //=========================================================================================================
     /**
@@ -159,10 +159,10 @@ signals:
     void pluginLoaded(const QString &msg, int alignment = Qt::AlignLeft, const QColor &color = Qt::black );
 
 private:
-    QVector<AbstractPlugin*>    m_qVecPlugins;             /**< Vector of all plugins. */
+    QVector<IPlugin*>    m_qVecPlugins;             /**< Vector of all plugins. */
 
-    QVector<AbstractSensor*>    m_qVecSensorPlugins;       /**< Vector of all AbstractSensor plugins. */
-    QVector<AbstractAlgorithm*> m_qVecAlgorithmPlugins;    /**< Vector of all AbstractAlgorithm plugins. */
+    QVector<ISensor*>    m_qVecSensorPlugins;       /**< Vector of all ISensor plugins. */
+    QVector<IAlgorithm*> m_qVecAlgorithmPlugins;    /**< Vector of all IAlgorithm plugins. */
     QVector<IIO*>        m_qVecIOPlugins;           /**< Vector of all IIO plugins. */
 };
 
@@ -170,21 +170,21 @@ private:
 // INLINE DEFINITIONS
 //=============================================================================================================
 
-inline const QVector<AbstractPlugin*>& PluginManager::getPlugins()
+inline const QVector<IPlugin*>& PluginManager::getPlugins()
 {
     return m_qVecPlugins;
 }
 
 //=============================================================================================================
 
-inline const QVector<AbstractSensor*>& PluginManager::getSensorPlugins()
+inline const QVector<ISensor*>& PluginManager::getSensorPlugins()
 {
     return m_qVecSensorPlugins;
 }
 
 //=============================================================================================================
 
-inline const QVector<AbstractAlgorithm*>& PluginManager::getAlgorithmPlugins()
+inline const QVector<IAlgorithm*>& PluginManager::getAlgorithmPlugins()
 {
     return m_qVecAlgorithmPlugins;
 }

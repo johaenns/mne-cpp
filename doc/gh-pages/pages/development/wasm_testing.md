@@ -1,7 +1,7 @@
 ---
 title: Testing via CI
 parent: WebAssembly
-grand_parent: Development
+grand_parent: Develop
 nav_order: 2
 ---
 # Testing via CI

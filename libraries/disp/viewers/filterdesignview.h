@@ -134,37 +134,8 @@ public:
      */
     void setSamplingRate(double dSamplingRate);
 
-    //=========================================================================================================
-    /**
-     * Sets filter 'From' value
-     *
-     * @param [in] dFrom    set filter 'From' value
-     */
     void setFrom(double dFrom);
-
-    //=========================================================================================================
-    /**
-     * Sets filter 'To' value
-     *
-     * @param [in] dTo      set filter 'To' value
-     */
     void setTo(double dTo);
-
-    //=========================================================================================================
-    /**
-     * Get filter 'From' value
-     *
-     * @return filter 'From' value
-     */
-    double getFrom();
-
-    //=========================================================================================================
-    /**
-     * Get filter 'To' value
-     *
-     * @return filter 'To' value
-     */
-    double getTo();
 
     //=========================================================================================================
     /**
@@ -201,24 +172,6 @@ public:
      * Loads and inits all important settings of this view via QSettings.
      */
     void loadSettings();
-
-    //=========================================================================================================
-    /**
-     * Clears the view
-     */
-    void clearView();
-
-    //=========================================================================================================
-    /**
-     * updates the filter plot scene with the newly generated filter
-     */
-    void updateFilterPlot();
-
-    //=========================================================================================================
-    /**
-     * Process the event of style mode change in an upper class.
-     */
-    void guiStyleChanged(DISPLIB::AbstractView::StyleMode style);
 
 protected:
     //=========================================================================================================
@@ -273,6 +226,11 @@ protected:
      */
     virtual void keyPressEvent(QKeyEvent * event);
 
+    //=========================================================================================================
+    /**
+     * updates the filter plot scene with the newly generated filter
+     */
+    void updateFilterPlot();
 
     //=========================================================================================================
     /**
@@ -314,14 +272,6 @@ protected:
      */
     void onBtnLoadFilter();
 
-    //=========================================================================================================
-    /**
-     * Update Gui and filter based on an input filter parameters
-     *
-     * @param [in] filter   filter which parameters will be used to update gui and stored filter
-     */
-    void updateGuiFromFilter(const RTPROCESSINGLIB::FilterKernel& filter);
-
     Ui::FilterDesignViewWidget*         m_pUi;                      /**< Pointer to the qt designer generated ui class.*/
 
     QPointer<FilterPlotScene>           m_pFilterPlotScene;         /**< Pointer to the QGraphicsScene which holds the filter plotting.*/
@@ -349,22 +299,6 @@ signals:
      * @param channelType  The channel type on which the filter should be performed on.
      */
     void filterChannelTypeChanged(const QString& channelType);
-
-    //=========================================================================================================
-    /**
-     * Update to simple filter control 'From'
-     *
-     * @param dFrom     change in filter 'From' value
-     */
-    void updateFilterFrom(double dFrom);
-
-    //=========================================================================================================
-    /**
-     * Update to simple filter control 'To'
-     *
-     * @param dTo       change in filter 'To' value
-     */
-    void updateFilterTo(double dTo);
 };
 } // NAMESPACE DISPLIB
 

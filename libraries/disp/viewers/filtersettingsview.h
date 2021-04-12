@@ -137,19 +137,6 @@ public:
      */
     void loadSettings();
 
-    //=========================================================================================================
-    /**
-     * Clears the view
-     */
-    void clearView();
-
-signals:
-    //=========================================================================================================
-    /**
-     * Signal emited when the filter activation box's state is changed.
-     */
-    void filterActivationChanged(bool activated);
-
 protected:
     //=========================================================================================================
     /**
@@ -204,6 +191,9 @@ protected:
     QSharedPointer<FilterDesignView>        m_pFilterView;                  /**< The filter view. */
 
     Ui::FilterSettingsViewWidget*           m_pUi;                          /**< The filter settings GUI view. */
+
+signals:
+    void filterActivationChanged(bool activated);
 };
 } // NAMESPACE
 

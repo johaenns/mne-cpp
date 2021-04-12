@@ -4,13 +4,12 @@
  * @author   Lorenz Esch <lesch@mgh.harvard.edu>;
  *           Lars Debor <Lars.Debor@tu-ilmenau.de>;
  *           Simon Heinke <Simon.Heinke@tu-ilmenau.de>
- *           Gabriel Motta <gbmotta@mgh.harvard.edu>
  * @since    0.1.0
  * @date     August, 2018
  *
  * @section  LICENSE
  *
- * Copyright (C) 2018, Lorenz Esch, Lars Debor, Simon Heinke, Gabriel Motta. All rights reserved.
+ * Copyright (C) 2018, Lorenz Esch, Lars Debor, Simon Heinke. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without modification, are permitted provided that
  * the following conditions are met:
@@ -40,7 +39,7 @@
 //=============================================================================================================
 
 #include "datamanager.h"
-#include <disp/viewers/bidsview.h>
+#include "FormFiles/datamanagercontrolview.h"
 
 #include <anShared/Management/analyzedata.h>
 #include <anShared/Management/communicator.h>
@@ -75,7 +74,7 @@ DataManager::~DataManager()
 
 //=============================================================================================================
 
-QSharedPointer<AbstractPlugin> DataManager::clone() const
+QSharedPointer<IPlugin> DataManager::clone() const
 {
     QSharedPointer<DataManager> pDataManagerClone = QSharedPointer<DataManager>::create();
     return pDataManagerClone;
@@ -112,22 +111,19 @@ QMenu *DataManager::getMenu()
 
 QDockWidget *DataManager::getControl()
 {
-    DISPLIB::BidsView* pDataManagerBidsView = new DISPLIB::BidsView;
+    DataManagerControlView* pDataManagerView = new DataManagerControlView;
 
-    pDataManagerBidsView->setModel(m_pAnalyzeData->getDataModel());
+    pDataManagerView->setModel(m_pAnalyzeData->getDataModel());
 
-    connect(pDataManagerBidsView, &DISPLIB::BidsView::selectedModelChanged,
-            this, &DataManager::onCurrentlySelectedModelChanged, Qt::UniqueConnection);
+    connect(pDataManagerView, &DataManagerControlView::selectedModelChanged,
+            this, &DataManager::onCurrentlySelectedModelChanged);
 
-    connect(pDataManagerBidsView, &DISPLIB::BidsView::selectedItemChanged,
-            this, &DataManager::onCurrentItemChanged, Qt::UniqueConnection);
-
-    connect(pDataManagerBidsView, &DISPLIB::BidsView::removeItem,
-            this, &DataManager::onRemoveItem, Qt::UniqueConnection);
+    connect(pDataManagerView, &DataManagerControlView::removeItem,
+            this, &DataManager::onRemoveItem);
 
     QDockWidget* pControlDock = new QDockWidget(getName());
     pControlDock->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea);
-    pControlDock->setWidget(pDataManagerBidsView);
+    pControlDock->setWidget(pDataManagerView);
     pControlDock->setObjectName(getName());
 
     return pControlDock;
@@ -172,11 +168,4 @@ void DataManager::onCurrentlySelectedModelChanged(const QVariant& data)
 void DataManager::onRemoveItem(const QModelIndex& index)
 {    
     m_pAnalyzeData->removeModel(index);
-}
-
-//=============================================================================================================
-
-void DataManager::onCurrentItemChanged(const QModelIndex &pIndex)
-{
-    m_pAnalyzeData->newSelection(pIndex);
 }

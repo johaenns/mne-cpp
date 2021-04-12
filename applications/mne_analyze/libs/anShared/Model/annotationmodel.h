@@ -64,15 +64,9 @@
 namespace ANSHAREDLIB {
 
 //=============================================================================================================
-// ANSHAREDLIB FORWARD DECLARATIONS
+// DEFINE STRUCTS
 //=============================================================================================================
 
-class FiffRawViewModel;
-
-//=============================================================================================================
-/**
- * Data struture that stores a group of events and the parameters of the group and the events within
- */
 struct EventGroup{
     int                 groupNumber;
     int                 groupType;
@@ -90,133 +84,23 @@ struct EventGroup{
     QVector<int>        dataIsUserEvent_Filtered;
 };
 
-//=============================================================================================================
-/**
- * Model that holds the event information associated with a fiff file.
- */
 class ANSHAREDSHARED_EXPORT AnnotationModel : public AbstractModel
 {
     Q_OBJECT
 
 public:
-    typedef QSharedPointer<AnnotationModel> SPtr;              /**< Shared pointer type for AnnotationModel. */
-    typedef QSharedPointer<const AnnotationModel> ConstSPtr;   /**< Const shared pointer type for AnnotationModel. */
-
-    //=========================================================================================================
-    /**
-     * Constructs an annotation model
-     *
-     * @param [in] parent   QObject parent of the model
-     */
     AnnotationModel(QObject* parent = Q_NULLPTR);
 
-    //=========================================================================================================
-
-    AnnotationModel(QSharedPointer<FiffRawViewModel> pFiffModel,
-                    QObject* parent = Q_NULLPTR);
-
-    //=========================================================================================================
-
-    AnnotationModel(const QString &sFilePath,
-                    const QByteArray& byteLoadedData = QByteArray(),
-                    float fSampFreq = 600,
-                    int iFirstSampOffst = 0,
-                    QObject* parent = Q_NULLPTR);
-
-    //=========================================================================================================
-    /**
-     * Destructs an annotation model.
-     */
     ~AnnotationModel();
 
     //=========================================================================================================
-    /**
-     * Inserts span rows at position
-     *
-     * @param [in] position     where to insert rows
-     * @param [in] span         how many rows to insert
-     * @param [in] parent       parent of inserted rows (unused)
-     *
-     * @return  returns true if successful
-     */
-    bool insertRows(int position,
-                    int span,
-                    const QModelIndex & parent) override;
-
-    //=========================================================================================================
-    /**
-     * Removes span rows at position
-     *
-     * @param [in] position     where to remove rows
-     * @param [in] span         how many rows to remove
-     * @param [in] parent       parent of inserted rows (unused)
-     *
-     * @return  returns true if successful
-     */
-    bool removeRows(int position,
-                    int span,
-                    const QModelIndex & parent = QModelIndex()) override;
-
-    //=========================================================================================================
-    /**
-     * Returns the number of rows in the model
-     *
-     * @param[in] parent     The parent index.
-     */
+    bool insertRows(int position, int span, const QModelIndex & parent) override;
+    bool removeRows(int position, int span, const QModelIndex & parent = QModelIndex()) override;
     virtual int rowCount(const QModelIndex &parent = QModelIndex()) const override;
-
-    //=========================================================================================================
-    /**
-     * Returns the number of columns in the model
-     *
-     * @param[in] parent     The parent index.
-     */
     virtual int columnCount(const QModelIndex &parent = QModelIndex()) const override;
-
-    //=========================================================================================================
-    /**
-     * Returns the data stored under the given role for the index.
-     *
-     * @param[in] index   The index that referres to the requested item.
-     * @param[in] role    The requested role.
-     */
-    virtual QVariant data(const QModelIndex &index,
-                          int role = Qt::DisplayRole) const override;
-
-    //=========================================================================================================
-    /**
-     * Returns the data for the given role and section in the header with the specified orientation.
-     *
-     * @param[in] section        For horizontal headers, the section number corresponds to the column number. Similarly, for vertical headers, the section number corresponds to the row number.
-     * @param[in] orientation    Qt::Horizontal or Qt::Vertical
-     * @param[in] role           role to show
-     *
-     * @return accessed eader data
-     */
-    QVariant headerData(int section,
-                        Qt::Orientation orientation,
-                        int role) const override;
-
-    //=========================================================================================================
-    /**
-     * Sets index to value based on role
-     *
-     * @param [in] index    model index to which the data will be set
-     * @param [in] value    data to be set
-     * @param [in] role     Qt role
-     *
-     * @return returns true if successful
-     */
-    bool setData(const QModelIndex & index,
-                 const QVariant & value,
-                 int role = Qt::EditRole) override;
-
-    //=========================================================================================================
-    /**
-     * Returns the item flags for the given index.
-     *
-     * @param[in] index   The index that referres to the requested item.
-     */
+    virtual QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const override;
+    QVariant headerData(int section, Qt::Orientation orientation, int role) const override;
+    bool setData(const QModelIndex & index, const QVariant & value, int role = Qt::EditRole) override;
     Qt::ItemFlags flags(const QModelIndex & index) const override;
 
     //=========================================================================================================
@@ -625,30 +509,6 @@ public:
                              int column,
                              const QModelIndex &parent = QModelIndex()) const override;
 
-    //=========================================================================================================
-    /**
-     * Sets the FiffViewModel to whitch this event model cooresponds
-     *
-     * @param [in] pModel   pointer to FiffRawViewModel
-     */
-    void setFiffModel(QSharedPointer<FiffRawViewModel> pModel);
-
-    //=========================================================================================================
-    /**
-     * Shift saved smaples based on offset iFirstSampleOffset
-     *
-     * @param [in] iFirstSampleOffset   offset due to sample index of first sample
-     */
-    void applyOffset(int iFirstSampleOffset);
-
-    //=========================================================================================================
-    /**
-     * Returns FiffRawViewModel associated with this annotation model
-     *
-     * @return pointer to cooresponding FiffRawViewModel
-     */
-    QSharedPointer<FiffRawViewModel> getFiffModel();
-
 signals:
 
     //=========================================================================================================
@@ -672,20 +532,6 @@ private:
      * Clears selected group of events
      */
     void resetSelection();
-
-    //=========================================================================================================
-    /**
-     * Sets up default paramaters ofr new model
-     */
-    void initModel();
-
-    //=========================================================================================================
-    /**
-     * Instantiates model from data in file pointed to by sFilePath
-     *
-     * @param [in] sFilePath    path to file with event data
-     */
-    void initFromFile(const QString& sFilePath);
 
     QStringList                         m_eventTypeList;                /** <List of the possible event types */
 
@@ -725,8 +571,6 @@ private:
     QMap<int, QColor>                   m_eventGroupColor;              /**< Stores colors to display for each event group */
 
     QStack<QListWidgetItem*>            m_dataStoredGroups;             /**< Stores the groups for switching between files */
-
-    QSharedPointer<FiffRawViewModel>    m_pFiffModel;                   /**< Pointer to FiffRawViewModel associated with the events stored in this model */
 };
 
 //=============================================================================================================

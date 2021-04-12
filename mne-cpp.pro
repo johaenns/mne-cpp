@@ -64,4 +64,3 @@ libraries.depends =
 applications.depends = libraries
 examples.depends = libraries
 testframes.depends = libraries
-

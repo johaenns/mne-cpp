@@ -54,7 +54,7 @@
 //=============================================================================================================
 
 namespace Ui {
-    class FtBufferSetupUi;
+    class FtBufferSetupWidgetClass;
 }
 
 //=============================================================================================================
@@ -113,6 +113,7 @@ public:
      */
     void loadSettings();
 
+private:
     //=========================================================================================================
     /**
      * Attempts to connect to and receive fiff data from buffer. As a backup tried to read from local file.
@@ -141,7 +142,7 @@ private:
 
     QString     m_sSettingsPath;            /**< The settings path to store the GUI settings to. */
 
-    Ui::FtBufferSetupUi* m_pUi;	/**< Holds the user interface for the FtBufferSetupWidget.*/
+    Ui::FtBufferSetupWidgetClass* m_pUi;	/**< Holds the user interface for the FtBufferSetupWidget.*/
 };
 
 } // NAMESPACE

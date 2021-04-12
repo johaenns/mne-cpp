@@ -42,7 +42,7 @@
 //=============================================================================================================
 
 #include "rawdataviewer_global.h"
-#include <anShared/Plugins/abstractplugin.h>
+#include <anShared/Interfaces/IPlugin.h>
 
 //=============================================================================================================
 // QT INCLUDES
@@ -84,12 +84,12 @@ namespace RAWDATAVIEWERPLUGIN
  *
  * @brief The RawDataViewer class provides a view to display raw fiff data.
  */
-class RAWDATAVIEWERSHARED_EXPORT RawDataViewer : public ANSHAREDLIB::AbstractPlugin
+class RAWDATAVIEWERSHARED_EXPORT RawDataViewer : public ANSHAREDLIB::IPlugin
 {
     Q_OBJECT
     Q_PLUGIN_METADATA(IID "ansharedlib/1.0" FILE "rawdataviewer.json") //New Qt5 Plugin system replaces Q_EXPORT_PLUGIN2 macro
     // Use the Q_INTERFACES() macro to tell Qt's meta-object system about the interfaces
-    Q_INTERFACES(ANSHAREDLIB::AbstractPlugin)
+    Q_INTERFACES(ANSHAREDLIB::IPlugin)
 
 public:
     //=========================================================================================================
@@ -104,8 +104,8 @@ public:
      */
     virtual ~RawDataViewer();
 
-    // AbstractPlugin functions
-    virtual QSharedPointer<AbstractPlugin> clone() const override;
+    // IPlugin functions
+    virtual QSharedPointer<IPlugin> clone() const override;
     virtual void init() override;
     virtual void unload() override;
     virtual QString getName() const override;
@@ -128,11 +128,9 @@ private:
 
     //=========================================================================================================
     /**
-     * Handles clearing view if currently used model is being removed
-     *
-     * @param [in] pRemovedModel    Pointer to model being removed
+     * Sets up control widgets, connects all relevant signals and slots, and diplays controls to user
      */
-    void onModelRemoved(QSharedPointer<ANSHAREDLIB::AbstractModel> pRemovedModel);
+    void updateControls();
 
     //=========================================================================================================
     /**
@@ -157,6 +155,8 @@ private:
     int                                             m_iSamplesPerBlock;         /**< The samples per data block. Default is set to sampling frequency. */
     int                                             m_iVisibleBlocks;           /**< The amount of visible data blocks. Default is set to 10. */
     int                                             m_iBufferBlocks;            /**< The amount of buffered data blocks. Default is set to 10. */
+
+    QPointer<DISPLIB::FiffRawViewSettings>          m_pSettingsViewWidget;      /**< The fiff raw view settings, which needs to be updated between file sessions. */
 
     QPointer<FiffRawView>                           m_pFiffRawView;             /**< View for Fiff data. */
 };

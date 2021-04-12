@@ -1,7 +1,7 @@
 ---
 title: MNE Scan
 has_children: true
-parent: Development
+parent: Develop
 nav_order: 2
 ---
 # MNE Scan Development Resources

@@ -39,11 +39,8 @@
 #include "averaging.h"
 
 #include <anShared/Management/communicator.h>
-#include <anShared/Management/analyzedata.h>
-
 #include <anShared/Model/fiffrawviewmodel.h>
 #include <anShared/Model/annotationmodel.h>
-#include <anShared/Model/averagingdatamodel.h>
 
 #include <disp/viewers/helpers/channelinfomodel.h>
 #include <disp/viewers/helpers/evokedsetmodel.h>
@@ -71,7 +68,6 @@
 
 #include <QDebug>
 #include <QTabWidget>
-#include <QtConcurrent/QtConcurrent>
 
 //=============================================================================================================
 // USED NAMESPACES
@@ -102,7 +98,6 @@ Averaging::Averaging()
 , m_bPerformFiltering(false)
 , m_iCurrentGroup(9999)
 {
-    m_pEvokedModel = QSharedPointer<DISPLIB::EvokedSetModel>(new DISPLIB::EvokedSetModel());
 }
 
 //=============================================================================================================
@@ -113,9 +108,10 @@ Averaging::~Averaging()
 
 //=============================================================================================================
 
-QSharedPointer<AbstractPlugin> Averaging::clone() const
+QSharedPointer<IPlugin> Averaging::clone() const
 {
-    return QSharedPointer<AbstractPlugin> (new Averaging);
+    QSharedPointer<Averaging> pAveragingClone(new Averaging);
+    return pAveragingClone;
 }
 
 //=============================================================================================================
@@ -160,9 +156,6 @@ QWidget *Averaging::getView()
     connect(this, &Averaging::showSelectedChannels,
             m_pButterflyView.data(), &DISPLIB::ButterflyView::showSelectedChannels, Qt::UniqueConnection);
 
-    connect(this, &Averaging::showAllChannels,
-            m_pButterflyView.data(), &DISPLIB::ButterflyView::showAllChannels, Qt::UniqueConnection);
-
     connect(this, &Averaging::channelSelectionManagerChanged,
             m_pAverageLayoutView.data(), &DISPLIB::AverageLayoutView::channelSelectionChanged, Qt::UniqueConnection);
 
@@ -188,7 +181,7 @@ QWidget *Averaging::getView()
 QDockWidget* Averaging::getControl()
 {
     QDockWidget* pControl = new QDockWidget(getName());
-    QScrollArea* pWidget = new QScrollArea();
+    QWidget* pWidget = new QWidget();
 
     m_pLayout = new QVBoxLayout;
     m_pTabView = new QTabWidget();
@@ -216,25 +209,28 @@ QDockWidget* Averaging::getControl()
             this, &Averaging::onComputeButtonClicked, Qt::UniqueConnection);
     connect(m_pAveragingSettingsView, &DISPLIB::AveragingSettingsView::changeDropActive,
             this, &Averaging::onRejectionChecked, Qt::UniqueConnection);
-    connect(&m_FutureWatcher, &QFutureWatcher<QMap<double,QList<int>>>::finished,
-            this, &Averaging::createNewAverage, Qt::UniqueConnection);
 
     m_pAveragingSettingsView->setProcessingMode(DISPLIB::AbstractView::ProcessingMode::Offline);
     m_pAveragingSettingsView->setSizePolicy(QSizePolicy::Expanding,
-                                            QSizePolicy::Fixed);
+                                            QSizePolicy::Minimum);
 
+    QGroupBox* pGBox = new QGroupBox();
+    QVBoxLayout* pVBLayout = new QVBoxLayout();
+
+    pGBox->setSizePolicy(QSizePolicy::Expanding,
+                         QSizePolicy::Minimum);
     pWidget->setSizePolicy(QSizePolicy::Expanding,
-                           QSizePolicy::Preferred);
-    m_pTabView->setSizePolicy(QSizePolicy::Expanding,
-                              QSizePolicy::Preferred);
+                           QSizePolicy::Minimum);
 
-    m_pTabView->addTab(m_pAveragingSettingsView, "Parameters");
+    pGBox->setLayout(pVBLayout);
 
-    m_pLayout->addWidget(m_pTabView);
-    m_pLayout->addStretch();
+    m_pLayout->addWidget(m_pAveragingSettingsView);
+
     pWidget->setLayout(m_pLayout);
 
-    pControl->setWidget(pWidget);
+    m_pTabView->addTab(pWidget, "Parameters");
+
+    pControl->setWidget(m_pTabView);
     pControl->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea);
     pControl->setObjectName("Averaging");
     pControl->setSizePolicy(QSizePolicy(QSizePolicy::Expanding,
@@ -250,26 +246,23 @@ void Averaging::handleEvent(QSharedPointer<Event> e)
         case EVENT_TYPE::SELECTED_MODEL_CHANGED:
             onModelChanged(e->getData().value<QSharedPointer<ANSHAREDLIB::AbstractModel> >());
             break;
-        case EVENT_TYPE::FILTER_ACTIVE_CHANGED:
+        case FILTER_ACTIVE_CHANGED:
             m_bPerformFiltering = e->getData().toBool();
             break;
-        case EVENT_TYPE::FILTER_DESIGN_CHANGED:
+        case FILTER_DESIGN_CHANGED:
             m_filterKernel = e->getData().value<FilterKernel>();
             break;
-        case EVENT_TYPE::EVENT_GROUPS_UPDATED:
+        case EVENT_GROUPS_UPDATED:
             updateGroups();
             break;
-        case EVENT_TYPE::CHANNEL_SELECTION_ITEMS:
+        case CHANNEL_SELECTION_ITEMS:
             setChannelSelection(e->getData());
             break;
-        case EVENT_TYPE::SCALING_MAP_CHANGED:
+        case SCALING_MAP_CHANGED:
             setScalingMap(e->getData());
             break;
-        case EVENT_TYPE::VIEW_SETTINGS_CHANGED:
+        case VIEW_SETTINGS_CHANGED:
             setViewSettings(e->getData().value<ANSHAREDLIB::ViewParameters>());
-            break;
-        case EVENT_TYPE::MODEL_REMOVED:
-            onModelRemoved(e->getData().value<QSharedPointer<ANSHAREDLIB::AbstractModel>>());
             break;
         default:
             qWarning() << "[Averaging::handleEvent] Received an Event that is not handled by switch cases.";
@@ -288,7 +281,6 @@ QVector<EVENT_TYPE> Averaging::getEventSubscriptions(void) const
     temp.push_back(CHANNEL_SELECTION_ITEMS);
     temp.push_back(SCALING_MAP_CHANGED);
     temp.push_back(VIEW_SETTINGS_CHANGED);
-    temp.push_back(MODEL_REMOVED);
 
     return temp;
 }
@@ -305,10 +297,7 @@ void Averaging::onModelChanged(QSharedPointer<ANSHAREDLIB::AbstractModel> pNewMo
             }
         }
         m_pFiffRawModel = qSharedPointerCast<FiffRawViewModel>(pNewModel);
-        loadFullGui(m_pFiffRawModel->getFiffInfo());
-    } else if(pNewModel->getType() == MODEL_TYPE::ANSHAREDLIB_AVERAGING_MODEL) {
-        loadFullGui(qSharedPointerCast<AveragingDataModel>(pNewModel)->getFiffInfo());
-        onNewAveragingModel(qSharedPointerCast<AveragingDataModel>(pNewModel));
+        loadFullGui();
     }
 }
 
@@ -323,7 +312,6 @@ void Averaging::onChangeNumAverages(qint32 numAve)
 
 void Averaging::onChangeBaselineFrom(qint32 fromMS)
 {
-    QMutexLocker lock(&m_ParameterMutex);
     m_fBaselineFromS = static_cast<float>(fromMS) / 1000.f;
 }
 
@@ -331,7 +319,6 @@ void Averaging::onChangeBaselineFrom(qint32 fromMS)
 
 void Averaging::onChangeBaselineTo(qint32 toMS)
 {
-    QMutexLocker lock(&m_ParameterMutex);
     m_fBaselineToS = static_cast<float>(toMS) / 1000.f;
 }
 
@@ -339,7 +326,6 @@ void Averaging::onChangeBaselineTo(qint32 toMS)
 
 void Averaging::onChangePreStim(qint32 mseconds)
 {
-    QMutexLocker lock(&m_ParameterMutex);
     m_fPreStim =  -(static_cast<float>(mseconds)/1000);
 }
 
@@ -347,7 +333,6 @@ void Averaging::onChangePreStim(qint32 mseconds)
 
 void Averaging::onChangePostStim(qint32 mseconds)
 {
-    QMutexLocker lock(&m_ParameterMutex);
     m_fPostStim = (static_cast<float>(mseconds)/1000);
 }
 
@@ -355,7 +340,6 @@ void Averaging::onChangePostStim(qint32 mseconds)
 
 void Averaging::onChangeBaselineActive(bool state)
 {
-    QMutexLocker lock(&m_ParameterMutex);
     m_bBasline = state;
 }
 
@@ -379,110 +363,77 @@ void Averaging::onComputeButtonClicked(bool bChecked)
 void Averaging::computeAverage()
 {
     if(!m_pFiffRawModel){
-        qWarning() << "No model loaded. Cannot calculate average.";
+        qWarning() << "No model loaded. Cannot calculate average";
         return;
     }
 
-    if (m_FutureWatcher.isRunning()){
-        qWarning() << "Averaging computation already taking place.";
-        return;
-    }
+    clearAveraging();
 
-    triggerLoadingStart("Calculating average...");
-
-    m_Future = QtConcurrent::run(this,
-                                 &Averaging::averageCalculation,
-                                 *this->m_pFiffRawModel->getFiffIO()->m_qlistRaw.first().data(),
-                                 m_pFiffRawModel->getAnnotationModel()->getAnnotationMatrix(m_iCurrentGroup),
-                                 m_filterKernel,
-                                 *m_pFiffRawModel->getFiffInfo());
-    m_FutureWatcher.setFuture(m_Future);
-}
-
-//=============================================================================================================
-
-QSharedPointer<FIFFLIB::FiffEvokedSet> Averaging::averageCalculation(FIFFLIB::FiffRawData FiffRaw,
-                                                                     MatrixXi matEvents,
-                                                                     RTPROCESSINGLIB::FilterKernel filterKernel,
-                                                                     FIFFLIB::FiffInfo fiffInfo)
-{
+    MatrixXi matEvents;
     QMap<QString,double> mapReject;
 
+    m_pFiffEvoked = QSharedPointer<FIFFLIB::FiffEvoked>(new FIFFLIB::FiffEvoked());
     int iType = 1; //hardwired for now, change later to type
     mapReject.insert("eog", 300e-06);
 
-    if(matEvents.size() < 6){
-        qWarning() << "[Averaging::averageCalacualtion] Not enough data points to calculate average.";
-        return Q_NULLPTR;
-    }
+    FIFFLIB::FiffRawData* pFiffRaw = this->m_pFiffRawModel->getFiffIO()->m_qlistRaw.first().data();
 
-    QSharedPointer<FIFFLIB::FiffEvoked> pFiffEvoked = QSharedPointer<FIFFLIB::FiffEvoked>(new FIFFLIB::FiffEvoked());
+    matEvents = m_pFiffRawModel->getAnnotationModel()->getAnnotationMatrix(m_iCurrentGroup);
+
+    if(matEvents.size() < 6){
+        qWarning() << "Not enough data points to calculate average.";
+        return;
+    }
 
     if(m_bPerformFiltering) {
-        QMutexLocker lock(&m_ParameterMutex);
-        *pFiffEvoked = RTPROCESSINGLIB::computeFilteredAverage(FiffRaw,
-                                                               matEvents,
-                                                               m_fPreStim,
-                                                               m_fPostStim,
-                                                               iType,
-                                                               m_bBasline,
-                                                               m_fBaselineFromS,
-                                                               m_fBaselineToS,
-                                                               mapReject,
-                                                               filterKernel);
+        *m_pFiffEvoked = RTPROCESSINGLIB::computeFilteredAverage(*pFiffRaw,
+                                                                 matEvents,
+                                                                 m_fPreStim,
+                                                                 m_fPostStim,
+                                                                 iType,
+                                                                 m_bBasline,
+                                                                 m_fBaselineFromS,
+                                                                 m_fBaselineToS,
+                                                                 mapReject,
+                                                                 m_filterKernel);
     } else {
-        QMutexLocker lock(&m_ParameterMutex);
-        *pFiffEvoked = RTPROCESSINGLIB::computeAverage(FiffRaw,
-                                                       matEvents,
-                                                       m_fPreStim,
-                                                       m_fPostStim,
-                                                       iType,
-                                                       m_bBasline,
-                                                       m_fBaselineFromS,
-                                                       m_fBaselineToS,
-                                                       mapReject);
+        *m_pFiffEvoked = RTPROCESSINGLIB::computeAverage(*pFiffRaw,
+                                                         matEvents,
+                                                         m_fPreStim,
+                                                         m_fPostStim,
+                                                         iType,
+                                                         m_bBasline,
+                                                         m_fBaselineFromS,
+                                                         m_fBaselineToS,
+                                                         mapReject);
     }
 
-    QSharedPointer<FIFFLIB::FiffEvokedSet> pFiffEvokedSet = QSharedPointer<FIFFLIB::FiffEvokedSet>(new FIFFLIB::FiffEvokedSet());
-
-    pFiffEvokedSet->evoked.append(*(pFiffEvoked.data()));
-    pFiffEvokedSet->info = fiffInfo;
-
-    QMutexLocker lock(&m_ParameterMutex);
+    m_pFiffEvokedSet = QSharedPointer<FIFFLIB::FiffEvokedSet>(new FIFFLIB::FiffEvokedSet());
+    m_pFiffEvokedSet->evoked.append(*(m_pFiffEvoked.data()));
+    m_pFiffEvokedSet->info = *(m_pFiffRawModel->getFiffInfo().data());
 
     if(m_bBasline){
-        pFiffEvokedSet->evoked[0].baseline.first = m_fBaselineFromS;
-        pFiffEvokedSet->evoked[0].baseline.second = m_fBaselineToS;
+        m_pFiffEvokedSet->evoked[0].baseline.first = m_fBaselineFromS;
+        m_pFiffEvokedSet->evoked[0].baseline.second = m_fBaselineToS;
     }
 
-    return pFiffEvokedSet;
+    m_pEvokedModel->setEvokedSet(m_pFiffEvokedSet);
+
+    m_pButterflyView->setEvokedSetModel(m_pEvokedModel);
+    m_pAverageLayoutView->setEvokedSetModel(m_pEvokedModel);
+
+    m_pButterflyView->dataUpdate();
+    m_pButterflyView->updateView();
+    m_pAverageLayoutView->updateData();
+
+    qInfo() << "[Averaging::computeAverage] Average computed.";
 }
 
 //=============================================================================================================
 
-void Averaging::createNewAverage()
+void Averaging::loadFullGui()
 {
-    QSharedPointer<FIFFLIB::FiffEvokedSet> pEvokedSet = m_Future.result();
-
-    if(pEvokedSet){
-        QSharedPointer<ANSHAREDLIB::AveragingDataModel> pNewAvgModel = QSharedPointer<ANSHAREDLIB::AveragingDataModel>(new ANSHAREDLIB::AveragingDataModel(pEvokedSet));
-
-        m_pAnalyzeData->addModel<ANSHAREDLIB::AveragingDataModel>(pNewAvgModel,
-                                                                  "Average - " + m_pAveragingSettingsView->getCurrentSelectGroup() + " - " + QDateTime::currentDateTime().toString());
-
-        qInfo() << "[Averaging::createNewAverage] Average computed.";
-    } else {
-        qInfo() << "[Averaging::createNewAverage] Unable to compute average.";
-    }
-
-    triggerLoadingEnd("Calculating average...");
-}
-
-//=============================================================================================================
-
-void Averaging::loadFullGui(QSharedPointer<FIFFLIB::FiffInfo> pInfo)
-{
-    m_pFiffInfo = pInfo;
+    m_pFiffInfo = m_pFiffRawModel->getFiffInfo();
     m_pAverageLayoutView->setFiffInfo(m_pFiffInfo);
 
     if(m_bLoaded) {
@@ -490,6 +441,8 @@ void Averaging::loadFullGui(QSharedPointer<FIFFLIB::FiffInfo> pInfo)
     }
 
     //Init Models
+    m_pEvokedModel = QSharedPointer<DISPLIB::EvokedSetModel>(new DISPLIB::EvokedSetModel());
+    m_pFiffEvokedSet = QSharedPointer<FIFFLIB::FiffEvokedSet>(new FIFFLIB::FiffEvokedSet());
 
     m_pAverageLayoutView->setEvokedSetModel(m_pEvokedModel);
 
@@ -556,6 +509,7 @@ void Averaging::loadFullGui(QSharedPointer<FIFFLIB::FiffInfo> pInfo)
     connect(m_pAveragingSettingsView, &DISPLIB::AveragingSettingsView::changeGroupSelect,
             this, &Averaging::onChangeGroupSelect, Qt::UniqueConnection);
 
+    onChangeGroupSelect(m_pAveragingSettingsView->getCurrentSelectGroup());
     m_pAverageLayoutView->setBackgroundColor(pChannelDataSettingsView->getBackgroundColor());
     m_pButterflyView->setBackgroundColor(pChannelDataSettingsView->getBackgroundColor());
 
@@ -569,6 +523,15 @@ void Averaging::loadFullGui(QSharedPointer<FIFFLIB::FiffInfo> pInfo)
     m_fPostStim = static_cast<float>(m_pAveragingSettingsView->getPostStimMSeconds())/1000.f;
 
     m_bLoaded = true;
+}
+
+//=============================================================================================================
+
+void Averaging::clearAveraging()
+{
+    m_pFiffEvokedSet->evoked.clear();
+    m_pFiffEvokedSet.clear();
+    m_pFiffEvoked.clear();
 }
 
 //=============================================================================================================
@@ -615,7 +578,6 @@ void Averaging::updateGroups()
 
 void Averaging::onChangeGroupSelect(const QString &text)
 {
-    QMutexLocker lock(&m_ParameterMutex);
     m_iCurrentGroup = m_pFiffRawModel->getAnnotationModel()->getIndexFromName(text);
 }
 
@@ -627,11 +589,7 @@ void Averaging::setChannelSelection(const QVariant &data)
         emit channelSelectionManagerChanged(data);
     }
     if(data.value<DISPLIB::SelectionItem*>()->m_sViewsToApply.contains("butterflyview")){
-        if(data.value<DISPLIB::SelectionItem*>()->m_bShowAll){
-            emit showAllChannels();
-        } else {
-            emit showSelectedChannels(data.value<DISPLIB::SelectionItem*>()->m_iChannelNumber);
-        }
+        emit showSelectedChannels(data.value<DISPLIB::SelectionItem*>()->m_iChannelNumber);
     }
 }
 
@@ -671,50 +629,6 @@ void Averaging::setViewSettings(ANSHAREDLIB::ViewParameters viewParams)
         if (viewParams.m_sSettingsToApply == ANSHAREDLIB::ViewParameters::all || viewParams.m_sSettingsToApply == ANSHAREDLIB::ViewParameters::signal){
             m_pButterflyView->setSingleAverageColor(viewParams.m_colorSignal);
             m_pButterflyView->update();
-        }
-    }
-}
-
-//=============================================================================================================
-
-void Averaging::onNewAveragingModel(QSharedPointer<ANSHAREDLIB::AveragingDataModel> pAveragingModel)
-{
-    m_pEvokedModel->setEvokedSet(pAveragingModel->data(QModelIndex()).value<QSharedPointer<FIFFLIB::FiffEvokedSet>>());
-
-    m_pButterflyView->setEvokedSetModel(m_pEvokedModel);
-    m_pAverageLayoutView->setEvokedSetModel(m_pEvokedModel);
-
-    m_pButterflyView->showAllChannels();
-    m_pButterflyView->dataUpdate();
-    m_pButterflyView->updateView();
-    m_pAverageLayoutView->updateData();
-}
-
-//=============================================================================================================
-
-void Averaging::triggerLoadingStart(QString sMessage)
-{
-    m_pCommu->publishEvent(LOADING_START, QVariant::fromValue(sMessage));
-}
-
-//=============================================================================================================
-
-void Averaging::triggerLoadingEnd(QString sMessage)
-{
-    m_pCommu->publishEvent(LOADING_END, QVariant::fromValue(sMessage));
-}
-
-//=============================================================================================================
-
-void Averaging::onModelRemoved(QSharedPointer<ANSHAREDLIB::AbstractModel> pRemovedModel)
-{
-    //Butterfly view
-    if(pRemovedModel->getType() == MODEL_TYPE::ANSHAREDLIB_AVERAGING_MODEL) {
-        if(m_pButterflyView->getEvokedSetModel()->getEvokedSet().data() == qSharedPointerCast<AveragingDataModel>(pRemovedModel)->getEvokedSet().data()) {
-            m_pButterflyView->clearView();
-        }
-        if(m_pAverageLayoutView->getEvokedSetModel()->getEvokedSet().data() == qSharedPointerCast<AveragingDataModel>(pRemovedModel)->getEvokedSet().data()) {
-            m_pAverageLayoutView->clearView();
         }
     }
 }

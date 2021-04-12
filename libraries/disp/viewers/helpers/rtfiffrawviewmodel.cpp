@@ -1119,13 +1119,13 @@ void RtFiffRawViewModel::filterDataBlock()
 
     for(int i = 0; i<m_filterKernel.size(); ++i) {
         FilterKernel tempFilter(m_filterKernel.at(i).getName(),
-                                FilterKernel::m_filterTypes.indexOf(m_filterKernel.at(i).getFilterType()),
+                                m_filterKernel.at(i).m_Type,
                                 m_filterKernel.at(i).getFilterOrder(),
                                 m_filterKernel.at(i).getCenterFrequency(),
                                 m_filterKernel.at(i).getBandwidth(),
                                 m_filterKernel.at(i).getParksWidth(),
                                 m_filterKernel.at(i).getSamplingFrequency(),
-                                FilterKernel::m_designMethods.indexOf(m_filterKernel.at(i).getDesignMethod()));
+                                m_filterKernel.at(i).m_designMethod);
 
         tempFilterList.append(tempFilter);
     }

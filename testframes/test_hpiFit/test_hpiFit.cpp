@@ -174,7 +174,7 @@ void TestHpiFit::initTestCase()
     QString sHPIResourceDir = QCoreApplication::applicationDirPath() + "/HPIFittingDebug";
     bool bDoDebug = true;
 
-    HPIFit HPI = HPIFit(pFiffInfo, true);
+    HPIFit HPI = HPIFit(pFiffInfo);
 
     // bring frequencies into right order
     from = first + mRefPos(0,0)*pFiffInfo->sfreq;
@@ -216,9 +216,7 @@ void TestHpiFit::initTestCase()
                    fittedPointSet,
                    pFiffInfo,
                    bDoDebug = 0,
-                   sHPIResourceDir,
-                   200,
-                   1e-5);
+                   sHPIResourceDir);
         qInfo() << "[done]\n";
 
         if(MNEMath::compareTransformation(devHeadT.trans, pFiffInfo->dev_head_t.trans, threshRot, threshTrans)) {

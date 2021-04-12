@@ -80,7 +80,7 @@ public:
      * @param[in] name       connection name
      * @param[in] descr      connection description
      */
-    PluginInputConnector(AbstractPlugin *parent,
+    PluginInputConnector(IPlugin *parent,
                          const QString &name,
                          const QString &descr);
 

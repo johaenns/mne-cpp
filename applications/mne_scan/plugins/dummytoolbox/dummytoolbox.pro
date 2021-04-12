@@ -37,32 +37,30 @@ include(../../../../mne-cpp.pri)
 
 TEMPLATE = lib
 
-QT += core widgets
-
-CONFIG += skip_target_version_ext plugin
+CONFIG += plugin
 
 DEFINES += DUMMYTOOLBOX_PLUGIN
 
-DESTDIR = $${MNE_BINARY_DIR}/mne_scan_plugins
+QT += core widgets
 
 TARGET = dummytoolbox
 CONFIG(debug, debug|release) {
     TARGET = $$join(TARGET,,,d)
 }
 
+DESTDIR = $${MNE_BINARY_DIR}/mne_scan_plugins
+
 LIBS += -L$${MNE_LIBRARY_DIR}
 CONFIG(debug, debug|release) {
     LIBS += -lscSharedd \
             -lscDispd \
             -lscMeasd \
-            -lmnecppFiffd \
-            -lmnecppUtilsd \
+            -lMNE$${MNE_LIB_VERSION}Utilsd \
 } else {
     LIBS += -lscShared \
             -lscDisp \
             -lscMeas \
-            -lmnecppFiff \
-            -lmnecppUtils \
+            -lMNE$${MNE_LIB_VERSION}Utils \
 }
 
 SOURCES += \
@@ -86,7 +84,14 @@ INCLUDEPATH += $${MNE_SCAN_INCLUDE_DIR}
 
 OTHER_FILES += dummytoolbox.json
 
+# Put generated form headers into the origin --> cause other src is pointing at them
+UI_DIR = $$PWD
+
+# suppress visibility warnings
+unix: QMAKE_CXXFLAGS += -Wno-attributes
+
 unix:!macx {
+    # Unix
     QMAKE_RPATHDIR += $ORIGIN/../../lib
 }
 

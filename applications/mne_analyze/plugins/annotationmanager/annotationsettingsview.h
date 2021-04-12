@@ -51,8 +51,6 @@
 #include <QWidget>
 #include <QColorDialog>
 #include <QStringListModel>
-#include <QFuture>
-#include <QFutureWatcher>
 
 //=============================================================================================================
 // FORWARD DECLARATIONS
@@ -72,7 +70,6 @@ namespace Ui {
 
 namespace FIFFLIB {
     class FiffInfo;
-    class FiffRawData;
 }
 
 //=============================================================================================================
@@ -120,12 +117,6 @@ public:
      */
     void disconnectFromModel();
 
-    //=========================================================================================================
-    /**
-     * Clears the view
-     */
-    void clearView(QSharedPointer<ANSHAREDLIB::AbstractModel> pRemovedModel);
-
 public slots:
     //=========================================================================================================
     /**
@@ -133,7 +124,7 @@ public slots:
      *
      * @param [in] iSample   Sample number to be added to annotation model
      */
-    void addAnnotationToModel(int iSamplePos);
+    void addAnnotationToModel();
 
     //=========================================================================================================
     /**
@@ -169,20 +160,6 @@ signals:
      * Tells view to move to location of selected event
      */
     void jumpToSelected();
-
-    //=========================================================================================================
-    /**
-     * ends event to trigger progress bar to appear
-     *
-     * @param [in] sMessage     message to appear
-     */
-    void loadingStart(QString sMessage = "Loading Events...");
-
-    //=========================================================================================================
-    /**
-     * Sends event to trigger progress bar to be hidden
-     */
-    void loadingEnd(QString sMessage = "Loading Events...");
 
 protected slots:
 
@@ -272,12 +249,6 @@ private slots:
      * @param[in] info  data for the trigger view to get a list of the stim channels
      */
     void initTriggerDetect(const QSharedPointer<FIFFLIB::FiffInfo> info);
-
-    //=========================================================================================================
-    /**
-     * Gets event map from QFuture and creates new groups baseed on it.
-     */
-    void createGroupsFromTriggers();
 
 private:
     //=========================================================================================================
@@ -389,27 +360,14 @@ private:
 
     //=========================================================================================================
     /**
-     * Starts trigger detection in separate thread
-     *
-     * @param [in] sChannelName      name of stim channel from which we will be reading
-     * @param [in] dThreshold        threshold for a spike to count as a trigger
-     */
-    void onDetectTriggers(const QString& sChannelName,
-                          double dThreshold);
-
-    //=========================================================================================================
-    /**
-     * Perfroms trigger detection and sorts events into map of events by group based on detection threshold
+     * Detects triggers from stim channel sChannelName above threshold dThreshold and saves them
+     * as events in Event groups sroted by channel and type
      *
      * @param[in] sChannelName      name of stim channel from which we will be reading
      * @param[in] dThreshold        threshold for a spike to count as a trigger
-     *
-     * @return      returns map of events sorted by groups based on threshold
      */
-    QMap<double,QList<int>> detectTriggerCalculations(const QString& sChannelName,
-                                                      double dThreshold,
-                                                      FIFFLIB::FiffInfo fiffInfo,
-                                                      FIFFLIB::FiffRawData fiffRaw);
+    void onDetectTriggers(const QString& sChannelName,
+                          double dThreshold);
 
     Ui::EventWindowDockWidget*                      m_pUi;                          /** < Pointer to GUI elements */
 
@@ -419,14 +377,13 @@ private:
 
     QSharedPointer<AnnotationDelegate>              m_pAnnDelegate;                 /** < Pointer to associated delegate */
     QSharedPointer<ANSHAREDLIB::AnnotationModel>    m_pAnnModel;                    /** < Pointer to associated model. Points to currently loaded. */
+    QSharedPointer<FIFFLIB::FiffInfo>               m_pFiffInfo;                    /** < Pointer to the FiffInfo of the currently loaded file */
     QSharedPointer<ANSHAREDLIB::FiffRawViewModel>   m_pFiffRawModel;                /** < Pointer to currently loaded FIffRawViewModel */
 
     QSharedPointer<DISPLIB::TriggerDetectionView>   m_pTriggerDetectView;           /** < Pointer to viewer to control GUI for detecting triggers */
 
-    QColorDialog*                                   m_pColordialog;                 /** < Used for Prompting users for annotation type colors */
+    QColorDialog*                                   m_pColordialog;                 /** < USed for Prompting users for annotation type colors */
 
-    QFutureWatcher <QMap<double,QList<int>>>        m_FutureWatcher;                /** < Watches m_Future and signals when calculations are done */
-    QFuture<QMap<double,QList<int>>>                m_Future;                       /** < Used to perfom trigger detection on a separate thread */
 
 };
 

@@ -296,14 +296,6 @@ public:
 
     //=========================================================================================================
     /**
-     * Returns the smapling frequency of the associated fiff file
-     *
-     * @return sampling frequency
-     */
-    inline float getSamplingFrequency() const;
-
-    //=========================================================================================================
-    /**
      * @brief getFiffInfo
      *
      * @return Shared Pointer pointing to m_pFiffInfo
@@ -450,19 +442,19 @@ public:
 
     //=========================================================================================================
     /**
+     * Adds a new annotation at the sample location the user clicked
+     *
+     * @param [in] iLastClicked     position of the last clicked sample
+     */
+    void addTimeMark(int iLastClicked);
+
+    //=========================================================================================================
+    /**
      * Set new filter parameters
      *
      * @param[in] filterData    list of the new filter
      */
     void setFilter(const RTPROCESSINGLIB::FilterKernel& filterData);
-
-    //=========================================================================================================
-    /**
-     * Get reference to the filterKernel stored in the model.
-     *
-     * @param[out] Reference to filterKernel in model.
-     */
-    const RTPROCESSINGLIB::FilterKernel& getFilter();
 
     //=========================================================================================================
     /**
@@ -500,25 +492,9 @@ public:
     /**
      * This tells the model where the view currently is horizontally.
      *
-     * @param[in] newScrollPosition Absolute sample number.
+     * @param newScrollPosition Absolute sample number.
      */
     void updateHorizontalScrollPosition(qint32 newScrollPosition);
-
-    //=========================================================================================================
-    /**
-     * Returns whether the model has an associated AnnotationModel
-     *
-     * @return true if there is an AnnotationModel, false if not
-     */
-    bool hasSavedEvents();
-
-    //=========================================================================================================
-    /**
-     * Sets the associated AnnotationModel to pModel
-     *
-     * @param [in] pModel   associated annotation model
-     */
-    void setAnnotationModel(QSharedPointer<ANSHAREDLIB::AnnotationModel> pModel);
 
 private:
     //=========================================================================================================
@@ -727,21 +703,6 @@ inline bool FiffRawViewModel::isEmpty() const
 }
 
 //=============================================================================================================
-
-inline float FiffRawViewModel::getSamplingFrequency() const
-{
-    float fFreq;
-
-    if(m_pFiffInfo){
-        fFreq = m_pFiffInfo->sfreq;
-    } else {
-        fFreq = 0;
-    }
-
-    return fFreq;
-}
-
-//=============================================================================================================
 // CHANNELDATA / CHANNELITERATOR DEFINITION
 //=============================================================================================================
 
@@ -839,12 +800,12 @@ public:
 
     ChannelData(std::list<QSharedPointer<QPair<MatrixXd, MatrixXd>>>::const_iterator it,
                 qint32 numBlocks,
-                quint32 rowNumber)
+                qint32 rowNumber)
     : m_lData()
     , m_iRowNumber(rowNumber)
     , m_iNumSamples(0)
     {
-        for (qint32 i = 0; i < numBlocks; ++i) {
+        for (int i = 0; i < numBlocks; ++i) {
             m_lData.push_back(*it);
             it++;
         }
@@ -856,7 +817,7 @@ public:
 
     ChannelData(const std::list<QSharedPointer<QPair<MatrixXd, MatrixXd>>> data,
                 unsigned long rowNumber)
-    : ChannelData(data.begin(), static_cast<qint32>(data.size()), rowNumber)
+    : ChannelData(data.begin(), data.size(), rowNumber)
     {
 
     }
@@ -871,7 +832,7 @@ public:
     // we need a public default constructor in order to register this as QMetaType
     ChannelData()
     : m_lData()
-    , m_iRowNumber(0)
+    , m_iRowNumber(-1)
     , m_iNumSamples(0)
     {
         qWarning() << "[FiffRawViewModel::ChannelData::ChannelData] WARNING: default constructor called, this is probably wrong ...";
@@ -929,7 +890,7 @@ private:
     // hold a list of smartpointers to the data that was in the model when the respective instance of ChannelData was created.
     // This prevents that pointers into the Eigen-matrices will become invalid when the background thread returns and changes the matrices.
     std::list<QSharedPointer<QPair<MatrixXd, MatrixXd> > > m_lData;
-    quint32 m_iRowNumber;
+    qint32 m_iRowNumber;
     qint64 m_iNumSamples;
 };
 

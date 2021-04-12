@@ -70,7 +70,7 @@ SourceLocalization::~SourceLocalization()
 
 //=============================================================================================================
 
-QSharedPointer<AbstractPlugin> SourceLocalization::clone() const
+QSharedPointer<IPlugin> SourceLocalization::clone() const
 {
     QSharedPointer<SourceLocalization> pSourceLocalizationClone(new SourceLocalization);
     return pSourceLocalizationClone;

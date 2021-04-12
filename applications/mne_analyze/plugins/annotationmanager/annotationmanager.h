@@ -44,7 +44,7 @@
 #include "annotationdelegate.h"
 #include "annotationsettingsview.h"
 
-#include <anShared/Plugins/abstractplugin.h>
+#include <anShared/Interfaces/IPlugin.h>
 
 //=============================================================================================================
 // QT INCLUDES
@@ -79,12 +79,12 @@ namespace ANNOTATIONMANAGERPLUGIN
  *
  * @brief The annotationmanager class provides input and output capabilities for the fiff file format.
  */
-class ANNOTATIONMANAGERSHARED_EXPORT AnnotationManager : public ANSHAREDLIB::AbstractPlugin
+class ANNOTATIONMANAGERSHARED_EXPORT AnnotationManager : public ANSHAREDLIB::IPlugin
 {
     Q_OBJECT
     Q_PLUGIN_METADATA(IID "ansharedlib/1.0" FILE "annotationmanager.json") //New Qt5 Plugin system replaces Q_EXPORT_PLUGIN2 macro
     // Use the Q_INTERFACES() macro to tell Qt's meta-object system about the interfaces
-    Q_INTERFACES(ANSHAREDLIB::AbstractPlugin)
+    Q_INTERFACES(ANSHAREDLIB::IPlugin)
 
 public:
     //=========================================================================================================
@@ -99,8 +99,8 @@ public:
      */
     ~AnnotationManager() override;
 
-    // AbstractPlugin functions
-    virtual QSharedPointer<AbstractPlugin> clone() const override;
+    // IPlugin functions
+    virtual QSharedPointer<IPlugin> clone() const override;
     virtual void init() override;
     virtual void unload() override;
     virtual QString getName() const override;
@@ -123,60 +123,37 @@ private:
 
     //=========================================================================================================
     /**
-     * Handles clearing view if currently used model is being removed
-     *
-     * @param [in] pRemovedModel    Pointer to model being removed
-     */
-    void onModelRemoved(QSharedPointer<ANSHAREDLIB::AbstractModel> pRemovedModel);
-
-    //=========================================================================================================
-    /**
      * Toggles whether to show annotations
      *
      * @param [in] iToggle  0 for not shown, 2 for shown
      */
     void toggleDisplayEvent(const int& iToggle);
 
-    //=========================================================================================================
+    //=============================================================================================================
     /**
      * Publishes event to force FiffRawView to redraw the data viewer
      */
     void onTriggerRedraw();
 
-    //=========================================================================================================
+    //=============================================================================================================
     /**
      * Publishes event to notify that event groups have been changed
      */
     void onGroupsUpdated();
 
-    //=========================================================================================================
+    //=============================================================================================================
     /**
      * Publishes event to force FiffRawView to jump to selected annoation
      */
     void onJumpToSelected();
 
-    //=========================================================================================================
-    /**
-     * Sends event to trigger loading bar to appear and sMessage to show
-     *
-     * @param [in] sMessage     loading bar message
-     */
-    void triggerLoadingStart(const QString& sMessage);
-
-    //=========================================================================================================
-    /**
-     * Sends event to hide loading bar
-     */
-    void triggerLoadingEnd(const QString& sMessage);
-
-    QSharedPointer<ANSHAREDLIB::Communicator>                     m_pCommu;                   /**< To broadcst signals */
+    QPointer<ANSHAREDLIB::Communicator>                     m_pCommu;                   /**< To broadcst signals */
 
 signals:
     void newAnnotationAvailable(int iAnnotation);
     void disconnectFromModel();
     void newAnnotationModelAvailable(QSharedPointer<ANSHAREDLIB::AnnotationModel> pAnnotModel);
     void newFiffRawViewModel(QSharedPointer<ANSHAREDLIB::FiffRawViewModel> pFiffRawModel);
-    void clearView(QSharedPointer<ANSHAREDLIB::AbstractModel> pRemovedModel);
 };
 
 } // NAMESPACE

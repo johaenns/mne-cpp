@@ -71,41 +71,105 @@ using namespace RTPROCESSINGLIB;
 using namespace Eigen;
 using namespace UTILSLIB;
 
-
-
 //=============================================================================================================
-// INIT STATIC MEMBERS
+// DEFINE GLOBAL RTPROCESSINGLIB METHODS
 //=============================================================================================================
 
-QVector<RTPROCESSINGLIB::FilterParameter> FilterKernel::m_designMethods ({
-    FilterParameter(QString("Cosine"), QString("A cosine filter")),
-    FilterParameter(QString("Tschebyscheff"), QString("A tschebyscheff filter"))
-//    FilterParameter(QString("External"), QString("An external filter"))
-});
-QVector<RTPROCESSINGLIB::FilterParameter> FilterKernel::m_filterTypes ({
-    FilterParameter(QString("LPF"), QString("An LPF filter")),
-    FilterParameter(QString("HPF"), QString("An HPF filter")),
-    FilterParameter(QString("BPF"), QString("A BPF filter")),
-    FilterParameter(QString("NOTCH"), QString("A NOTCH filter")),
-    FilterParameter(QString("UNKNOWN"), QString("An UNKNOWN filter"))
-});
+QString RTPROCESSINGLIB::getStringForDesignMethod(FilterKernel::DesignMethod designMethod)
+{
+    switch(designMethod) {
+        case FilterKernel::External:
+            return "External";
+            break;
+
+        case FilterKernel::Cosine:
+            return "Cosine";
+            break;
+
+        case FilterKernel::Tschebyscheff:
+            return "Tschebyscheff";
+            break;
+
+        default:
+            return "External";
+            break;
+    }
+}
+
+//=============================================================================================================
+
+QString RTPROCESSINGLIB::getStringForFilterType(FilterKernel::FilterType filterType)
+{
+    switch(filterType) {
+        case FilterKernel::LPF:
+            return "LPF";
+            break;
+
+        case FilterKernel::HPF:
+            return "HPF";
+            break;
+
+        case FilterKernel::BPF:
+            return "BPF";
+            break;
+
+        case FilterKernel::NOTCH:
+            return "NOTCH";
+            break;
+
+        default:
+            return "LPF";
+            break;
+    }
+}
+
+//=============================================================================================================
+
+FilterKernel::DesignMethod RTPROCESSINGLIB::getDesignMethodForString(const QString &designMethodString)
+{
+    if(designMethodString == "External") {
+        return FilterKernel::External;
+    } else if(designMethodString == "Tschebyscheff") {
+        return FilterKernel::Tschebyscheff;
+    } else if(designMethodString == "Cosine") {
+        return FilterKernel::Cosine;
+    } else {
+        return FilterKernel::External;
+    }
+}
+
+//=============================================================================================================
+
+FilterKernel::FilterType RTPROCESSINGLIB::getFilterTypeForString(const QString &filterTypeString)
+{
+    if(filterTypeString == "LPF") {
+        return FilterKernel::LPF;
+    } else if(filterTypeString == "HPF") {
+        return FilterKernel::HPF;
+    } else if(filterTypeString == "BPF") {
+        return FilterKernel::BPF;
+    } else if(filterTypeString == "NOTCH") {
+        return FilterKernel::NOTCH;
+    } else {
+        return FilterKernel::UNKNOWN;
+    }
+}
 
 //=============================================================================================================
 // DEFINE MEMBER METHODS
 //=============================================================================================================
 
 FilterKernel::FilterKernel()
-: m_sFreq(1000)
+: m_Type(UNKNOWN)
+, m_iFilterOrder(80)
+, m_sFilterName("Unknown")
+, m_dParksWidth(0.1)
+, m_designMethod(External)
 , m_dCenterFreq(0.5)
 , m_dBandwidth(0.1)
-, m_dParksWidth(0.1)
-, m_dLowpassFreq(40)
-, m_dHighpassFreq(4)
-, m_iFilterOrder(80)
-, m_iDesignMethod(m_designMethods.indexOf(FilterParameter("Cosine")))
-, m_iFilterType(m_filterTypes.indexOf(FilterParameter("BPF")))
-, m_sFilterName("Unknown")
-, m_sFilterShortDescription("")
+, m_sFreq(1000)
+, m_dLowpassFreq(4)
+, m_dHighpassFreq(40)
 {
     designFilter();
 }
@@ -113,22 +177,21 @@ FilterKernel::FilterKernel()
 //=============================================================================================================
 
 FilterKernel::FilterKernel(const QString& sFilterName,
-                           int iFilterType,
+                           FilterType type,
                            int iOrder,
                            double dCenterfreq,
                            double dBandwidth,
                            double dParkswidth,
                            double dSFreq,
-                           int iDesignMethod)
-: m_sFreq(dSFreq)
+                           DesignMethod designMethod)
+: m_designMethod(designMethod)
+, m_Type(type)
+, m_sFreq(dSFreq)
 , m_dCenterFreq(dCenterfreq)
 , m_dBandwidth(dBandwidth)
 , m_dParksWidth(dParkswidth)
 , m_iFilterOrder(iOrder)
-, m_iDesignMethod(iDesignMethod)
-, m_iFilterType(iFilterType)
 , m_sFilterName(sFilterName)
-, m_sFilterShortDescription()
 {
     if(iOrder < 9) {
        qWarning() << "[FilterKernel::FilterKernel] Less than 9 taps were provided. Setting number of taps to 9.";
@@ -409,13 +472,13 @@ void FilterKernel::designFilter()
     int exp = ceil(MNEMath::log2(iFftLength));
     iFftLength = pow(2, exp);
 
-    switch(m_iDesignMethod) {
-        case 1: {
+    switch(m_designMethod) {
+        case Tschebyscheff: {
             ParksMcClellan filter(m_iFilterOrder,
                                   m_dCenterFreq,
                                   m_dBandwidth,
                                   m_dParksWidth,
-                                  static_cast<ParksMcClellan::TPassType>(m_iFilterType));
+                                  static_cast<ParksMcClellan::TPassType>(m_Type));
             m_vecCoeff = filter.FirCoeff;
 
             //fft-transform m_vecCoeff in order to be able to perform frequency-domain filtering
@@ -424,40 +487,40 @@ void FilterKernel::designFilter()
             break;
         }
 
-        case 0: {
+        case Cosine: {
             CosineFilter filtercos;
 
-            switch(m_iFilterType) {
-                case 0:
+            switch(m_Type) {
+                case LPF:
                     filtercos = CosineFilter(iFftLength,
                                              (m_dCenterFreq)*(m_sFreq/2.),
                                              m_dParksWidth*(m_sFreq/2),
                                              (m_dCenterFreq)*(m_sFreq/2),
                                              m_dParksWidth*(m_sFreq/2),
                                              m_sFreq,
-                                             static_cast<CosineFilter::TPassType>(m_iFilterType));
+                                             (CosineFilter::TPassType)m_Type);
 
                     break;
 
-                case 1:
+                case HPF:
                     filtercos = CosineFilter(iFftLength,
                                              (m_dCenterFreq)*(m_sFreq/2),
                                              m_dParksWidth*(m_sFreq/2),
                                              (m_dCenterFreq)*(m_sFreq/2),
                                              m_dParksWidth*(m_sFreq/2),
                                              m_sFreq,
-                                             static_cast<CosineFilter::TPassType>(m_iFilterType));
+                                             (CosineFilter::TPassType)m_Type);
 
                     break;
 
-                case 2:
+                case BPF:
                     filtercos = CosineFilter(iFftLength,
                                              (m_dCenterFreq + m_dBandwidth/2)*(m_sFreq/2),
                                              m_dParksWidth*(m_sFreq/2),
                                              (m_dCenterFreq - m_dBandwidth/2)*(m_sFreq/2),
                                              m_dParksWidth*(m_sFreq/2),
                                              m_sFreq,
-                                             static_cast<CosineFilter::TPassType>(m_iFilterType));
+                                             (CosineFilter::TPassType)m_Type);
 
                     break;
             }
@@ -475,106 +538,20 @@ void FilterKernel::designFilter()
         }
     }
 
-    switch(m_iFilterType) {
-        case 0:
+    switch(m_Type) {
+        case LPF:
             m_dLowpassFreq = 0;
             m_dHighpassFreq = m_dCenterFreq*(m_sFreq/2);
         break;
 
-        case 1:
+        case HPF:
             m_dLowpassFreq = m_dCenterFreq*(m_sFreq/2);
             m_dHighpassFreq = 0;
         break;
 
-        case 2:
+        case BPF:
             m_dLowpassFreq = (m_dCenterFreq + m_dBandwidth/2)*(m_sFreq/2);
             m_dHighpassFreq = (m_dCenterFreq - m_dBandwidth/2)*(m_sFreq/2);
         break;
     }
-    getShortDescription();
 }
-
-//=============================================================================================================
-
-QString FilterKernel::getShortDescription() const
-{
-    QString description(m_designMethods.at(m_iDesignMethod).getName() + "  -  " + \
-                                QString::number(m_dHighpassFreq,'g',4) + "Hz to " + QString::number(m_dLowpassFreq,'g',4) + "Hz  -  " \
-                                "Ord: " + QString::number(m_iFilterOrder));
-    return description;
-}
-
-//=============================================================================================================
-
-RTPROCESSINGLIB::FilterParameter FilterKernel::getDesignMethod() const
-{
-    if(m_iDesignMethod < 0){
-        return m_designMethods.at(0);
-    }
-    return m_designMethods.at(m_iDesignMethod);
-}
-
-//=============================================================================================================
-
-RTPROCESSINGLIB::FilterParameter FilterKernel::getFilterType() const
-{
-    if(m_iFilterType < 0){
-        return m_filterTypes.at(0);
-    }
-    return m_filterTypes.at(m_iFilterType);
-}
-
-//=============================================================================================================
-
-void FilterKernel::setDesignMethod(int iDesignMethod)
-{
-    if(iDesignMethod < 0){
-        m_iDesignMethod = 0;
-    } else {
-        m_iDesignMethod = iDesignMethod;
-    }
-}
-
-//=============================================================================================================
-
-void FilterKernel::setFilterType(int iFilterType)
-{
-    if(iFilterType < 0){
-        m_iFilterType = 0;
-    } else {
-        m_iFilterType = iFilterType;
-    }
-}
-
-//=============================================================================================================
-
-FilterParameter::FilterParameter()
-:FilterParameter("Unknown", "")
-{
-}
-
-//=============================================================================================================
-
-FilterParameter::FilterParameter(QString sName)
-:FilterParameter(sName,"")
-{  
-}
-
-//=============================================================================================================
-
-FilterParameter::FilterParameter(QString sName,
-                           QString sDescription)
-: m_sName(sName)
-, m_sDescription(sDescription)
-{
-
-}
-
-//=============================================================================================================
-
-QString FilterParameter::getName() const
-{
-    return m_sName;
-}
-
-//=============================================================================================================

@@ -38,10 +38,7 @@
 //=============================================================================================================
 
 #include "annotationmodel.h"
-#include "fiffrawviewmodel.h"
-#include <mne/mne.h>
 #include <iomanip>
-#include <iostream>
 
 //=============================================================================================================
 // QT INCLUDES
@@ -88,52 +85,28 @@ AnnotationModel::AnnotationModel(QObject* parent)
 , m_sFilterEventType("All")
 {
     qInfo() << "[AnnotationModel::AnnotationModel] CONSTRUCTOR";
-    initModel();
 
-}
+    m_eventTypeList<<"0";
 
-//=============================================================================================================
+    m_eventTypeColor[0] = QColor(Qt::black);
+    m_eventTypeColor[1] = QColor(Qt::black);
+    m_eventTypeColor[2] = QColor(Qt::magenta);
+    m_eventTypeColor[3] = QColor(Qt::green);
+    m_eventTypeColor[4] = QColor(Qt::red);
+    m_eventTypeColor[5] = QColor(Qt::cyan);
+    m_eventTypeColor[32] = QColor(Qt::yellow);
+    m_eventTypeColor[998] = QColor(Qt::darkBlue);
+    m_eventTypeColor[999] = QColor(Qt::darkCyan);
 
-AnnotationModel::AnnotationModel(QSharedPointer<FiffRawViewModel> pFiffModel,
-                QObject* parent)
-: AbstractModel(parent)
-, m_iIndexCount(0)
-, m_iSamplePos(0)
-, m_iFirstSample(0)
-, m_iSelectedCheckState(0)
-, m_iSelectedAnn(0)
-, m_iLastTypeAdded(0)
-, m_fFreq(600)
-, m_sFilterEventType("All")
-, m_pFiffModel(pFiffModel)
-{
-    initModel();
-}
-
-//=============================================================================================================
-
-AnnotationModel::AnnotationModel(const QString &sFilePath,
-                                 const QByteArray& byteLoadedData,
-                                 float fSampFreq,
-                                 int iFirstSampOffst,
-                                 QObject* parent)
-: AbstractModel(parent)
-, m_iIndexCount(0)
-, m_iSamplePos(0)
-, m_iFirstSample(0)
-, m_iSelectedCheckState(0)
-, m_iSelectedAnn(0)
-, m_iLastTypeAdded(0)
-, m_fFreq(600)
-, m_sFilterEventType("All")
-
-{
-    Q_UNUSED(byteLoadedData)
-    Q_UNUSED(fSampFreq)
-    Q_UNUSED(iFirstSampOffst)
-
-    initModel();
-    initFromFile(sFilePath);
+    m_eventGroupColor[0] = QColor(Qt::black);
+    m_eventGroupColor[1] = QColor(Qt::black);
+    m_eventGroupColor[2] = QColor(Qt::magenta);
+    m_eventGroupColor[3] = QColor(Qt::green);
+    m_eventGroupColor[4] = QColor(Qt::red);
+    m_eventGroupColor[5] = QColor(Qt::cyan);
+    m_eventGroupColor[32] = QColor(Qt::yellow);
+    m_eventGroupColor[998] = QColor(Qt::darkBlue);
+    m_eventGroupColor[999] = QColor(Qt::darkCyan);
 }
 
 //=============================================================================================================
@@ -156,9 +129,7 @@ QStringList AnnotationModel::getEventTypeList() const
 
 //=============================================================================================================
 
-bool AnnotationModel::insertRows(int position,
-                                 int span,
-                                 const QModelIndex & parent)
+bool AnnotationModel::insertRows(int position, int span, const QModelIndex & parent)
 {
     Q_UNUSED(parent);
 
@@ -239,8 +210,7 @@ int AnnotationModel::columnCount(const QModelIndex &parent) const
 
 //=============================================================================================================
 
-QVariant AnnotationModel::data(const QModelIndex &index,
-                               int role) const
+QVariant AnnotationModel::data(const QModelIndex &index, int role) const
 {
     if(role == Qt::TextAlignmentRole)
         return QVariant(Qt::AlignCenter | Qt::AlignVCenter);
@@ -334,9 +304,7 @@ QVariant AnnotationModel::data(const QModelIndex &index,
 
 //=============================================================================================================
 
-bool AnnotationModel::setData(const QModelIndex &index,
-                              const QVariant &value,
-                              int role)
+bool AnnotationModel::setData(const QModelIndex &index, const QVariant &value, int role)
 {
     if(index.row() >= m_dataSamples.size() || index.column() >= columnCount())
         return false;
@@ -412,9 +380,7 @@ Qt::ItemFlags AnnotationModel::flags(const QModelIndex &index) const
 
 //=============================================================================================================
 
-QVariant AnnotationModel::headerData(int section,
-                                     Qt::Orientation orientation,
-                                     int role) const
+QVariant AnnotationModel::headerData(int section, Qt::Orientation orientation, int role) const
 {
     if(role != Qt::DisplayRole && role != Qt::TextAlignmentRole)
         return QVariant();
@@ -441,9 +407,7 @@ QVariant AnnotationModel::headerData(int section,
 
 //=============================================================================================================
 
-bool AnnotationModel::removeRows(int position,
-                                 int span,
-                                 const QModelIndex &parent)
+bool AnnotationModel::removeRows(int position, int span, const QModelIndex &parent)
 {
     Q_UNUSED(parent);
 
@@ -469,8 +433,7 @@ bool AnnotationModel::removeRows(int position,
 
 //=============================================================================================================
 
-void AnnotationModel::setFirstLastSample(int firstSample,
-                                         int lastSample)
+void AnnotationModel::setFirstLastSample(int firstSample, int lastSample)
 {
     m_iFirstSample = firstSample;
     m_iLastSample = lastSample;
@@ -615,9 +578,8 @@ bool AnnotationModel::saveToFile(const QString& sPath)
 
     QTextStream out(&file);
     for(int i = 0; i < this->getNumberOfAnnotations(); i++) {
-        int iAnnotation = this->getAnnotation(i);
-        out << "  " << iAnnotation << "   " << QString::number(static_cast<float>(iAnnotation - m_pFiffModel->absoluteFirstSample()) / this->getFreq(), 'f', 4) << "          0         1" << endl;
-        out << "  " << iAnnotation << "   " << QString::number(static_cast<float>(iAnnotation - m_pFiffModel->absoluteFirstSample()) / this->getFreq(), 'f', 4) << "          1         0" << endl;
+        out << "  " << this->getAnnotation(i) << "   " << QString::number(static_cast<float>(this->getAnnotation(i)) / this->getFreq(), 'f', 4) << "          0         1" << endl;
+        out << "  " << this->getAnnotation(i) << "   " << QString::number(static_cast<float>(this->getAnnotation(i)) / this->getFreq(), 'f', 4) << "          1         0" << endl;
     }
     return true;
     #endif
@@ -632,8 +594,7 @@ void AnnotationModel::setLastType(int iType)
 
 //=============================================================================================================
 
-void AnnotationModel::updateFilteredSample(int iIndex,
-                                           int iSample)
+void AnnotationModel::updateFilteredSample(int iIndex, int iSample)
 {
     m_dataSamplesFiltered[iIndex] = iSample + m_iFirstSample;
 }
@@ -947,103 +908,4 @@ void AnnotationModel::saveGroup()
     m_mAnnotationHub[m_iSelectedGroup]->dataSamples_Filtered = m_dataSamplesFiltered;
     m_mAnnotationHub[m_iSelectedGroup]->dataTypes_Filtered = m_dataTypesFiltered;
     m_mAnnotationHub[m_iSelectedGroup]->dataIsUserEvent_Filtered = m_dataIsUserEventFiltered;
-}
-
-//=============================================================================================================
-
-void AnnotationModel::setFiffModel(QSharedPointer<FiffRawViewModel> pModel)
-{
-    m_pFiffModel = pModel;
-}
-
-//=============================================================================================================
-
-QSharedPointer<FiffRawViewModel> AnnotationModel::getFiffModel()
-{
-    return m_pFiffModel;
-}
-
-//=============================================================================================================
-
-void AnnotationModel::initModel()
-{
-    m_eventTypeList<<"0";
-
-    m_eventTypeColor[0] = QColor(Qt::black);
-    m_eventTypeColor[1] = QColor(Qt::black);
-    m_eventTypeColor[2] = QColor(Qt::magenta);
-    m_eventTypeColor[3] = QColor(Qt::green);
-    m_eventTypeColor[4] = QColor(Qt::red);
-    m_eventTypeColor[5] = QColor(Qt::cyan);
-    m_eventTypeColor[32] = QColor(Qt::yellow);
-    m_eventTypeColor[998] = QColor(Qt::darkBlue);
-    m_eventTypeColor[999] = QColor(Qt::darkCyan);
-
-    m_eventGroupColor[0] = QColor(Qt::black);
-    m_eventGroupColor[1] = QColor(Qt::black);
-    m_eventGroupColor[2] = QColor(Qt::magenta);
-    m_eventGroupColor[3] = QColor(Qt::green);
-    m_eventGroupColor[4] = QColor(Qt::red);
-    m_eventGroupColor[5] = QColor(Qt::cyan);
-    m_eventGroupColor[32] = QColor(Qt::yellow);
-    m_eventGroupColor[998] = QColor(Qt::darkBlue);
-    m_eventGroupColor[999] = QColor(Qt::darkCyan);
-
-    m_bIsInit = true;
-}
-
-//=============================================================================================================
-
-void AnnotationModel::initFromFile(const QString& sFilePath)
-{
-    QFileInfo fileInfo(sFilePath);
-
-    if(fileInfo.exists() && (fileInfo.completeSuffix() == "eve")){
-        QFile file(sFilePath);
-
-        int iGroupIndex = createGroup(fileInfo.baseName(),
-                    false,
-                    1,
-                    QColor("red"));
-
-        switchGroup(iGroupIndex);
-
-        QListWidgetItem* newItem = new QListWidgetItem(fileInfo.baseName());
-        newItem->setData(Qt::UserRole, QVariant(iGroupIndex));
-        newItem->setData(Qt::DecorationRole, QColor("red"));
-        newItem->setFlags (newItem->flags () | Qt::ItemIsEnabled | Qt::ItemIsSelectable);
-        pushGroup(newItem);
-
-        Eigen::MatrixXi eventList;
-        MNELIB::MNE::read_events_from_ascii(file, eventList);
-
-        for(int i = 0; i < eventList.size(); i++){
-            setSamplePos(eventList(i,0));
-            insertRow(0, QModelIndex());
-        }
-
-    } else if(fileInfo.exists() && (fileInfo.completeSuffix() == "fif")){
-        QFile file(sFilePath);
-        if (!file.open(QIODevice::ReadOnly | QIODevice::Text)){
-            return;
-        }
-        Eigen::MatrixXi eventlist;
-        MNELIB::MNE::read_events_from_fif(file, eventlist);
-    }
-}
-
-//=============================================================================================================
-
-void AnnotationModel::applyOffset(int iFirstSampleOffset)
-{
-    for (int i = 0; i < m_dataSamples.size(); i++){
-        if (iFirstSampleOffset <= m_dataSamples[i]){
-            m_dataSamples[i] -= iFirstSampleOffset;
-        } else {
-            qWarning() << "[AnnotationModel::applyOffset] Offset greater than event sample";
-        }
-    }
-
-    //Update data to be diplayed
-    setEventFilterType(m_sFilterEventType);
 }

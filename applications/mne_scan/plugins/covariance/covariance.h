@@ -42,7 +42,7 @@
 
 #include "covariance_global.h"
 
-#include <scShared/Plugins/abstractalgorithm.h>
+#include <scShared/Interfaces/IAlgorithm.h>
 #include <utils/generics/circularbuffer.h>
 
 //=============================================================================================================
@@ -90,12 +90,12 @@ namespace COVARIANCEPLUGIN
  *
  * @brief The Covariance class provides a Covariance algorithm structure.
  */
-class COVARIANCESHARED_EXPORT Covariance : public SCSHAREDLIB::AbstractAlgorithm
+class COVARIANCESHARED_EXPORT Covariance : public SCSHAREDLIB::IAlgorithm
 {
     Q_OBJECT
     Q_PLUGIN_METADATA(IID "scsharedlib/1.0" FILE "covariance.json") //New Qt5 Plugin system replaces Q_EXPORT_PLUGIN2 macro
     // Use the Q_INTERFACES() macro to tell Qt's meta-object system about the interfaces
-    Q_INTERFACES(SCSHAREDLIB::AbstractAlgorithm)
+    Q_INTERFACES(SCSHAREDLIB::IAlgorithm)
 
 public:
     //=========================================================================================================
@@ -132,12 +132,12 @@ public:
     /**
      * Clone the plugin
      */
-    virtual QSharedPointer<SCSHAREDLIB::AbstractPlugin> clone() const;
+    virtual QSharedPointer<SCSHAREDLIB::IPlugin> clone() const;
 
     virtual bool start();
     virtual bool stop();
 
-    virtual SCSHAREDLIB::AbstractPlugin::PluginType getType() const;
+    virtual SCSHAREDLIB::IPlugin::PluginType getType() const;
     virtual QString getName() const;
 
     virtual QWidget* setupWidget();

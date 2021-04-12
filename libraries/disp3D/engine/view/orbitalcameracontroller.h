@@ -48,13 +48,6 @@
 
 #include <QSharedPointer>
 #include <QVector3D>
-#include <QObject>
-#include <QMatrix4x4>
-
-namespace Qt3DCore {
-class QTransform;
-}
-
 
 //=============================================================================================================
 // EIGEN INCLUDES
@@ -89,7 +82,6 @@ namespace DISP3DLIB {
 class DISP3DSHARED_EXPORT OrbitalCameraController : public Qt3DExtras::QAbstractCameraController
 {
    Q_OBJECT
-   Q_PROPERTY(int rotating READ rotating WRITE setRotating)                 /**< Access for QPropertyAnimation */
 
 public:
     typedef QSharedPointer<OrbitalCameraController> SPtr;            /**< Shared pointer type for OrbitalCameraController. */
@@ -109,27 +101,11 @@ public:
 
     //=========================================================================================================
     /**
-     * Turns inverse rotation of the camera on and off.
+     * Turns invers rotation of the camera on and off.
      *
      * @param[in] newStatusFlag      The new status of the inversion
      */
     void invertCameraRotation(bool newStatusFlag);
-
-    //=========================================================================================================
-    /**
-     * Sets the angle of the camera for rotating around
-     *
-     * @param[in] count      The counter for how long the rotation has been happening
-     */
-    void setRotating(int count);
-
-    //=========================================================================================================
-    /**
-     * Queries the camera rotating counter
-     *
-     * @return The rotation counter
-     */
-    int rotating() const;
 
 private:
     //=========================================================================================================
@@ -158,11 +134,8 @@ private:
      */
     inline float distance(const QVector3D &firstPoint, const QVector3D &secondPoint) const;
 
-    float m_fRotationInverseFactor = 1.0f;      /**< The factor used to invers the camera rotation. */
-    const float m_fZoomInLimit = 0.04f;         /**< The minimum distance of the camera to the view center. */
-    const float m_fAutoRotationSpeed = 1.0f;    /**< The speed that automatic rotation rotates */
-    int m_iRotating;                            /**< How long the camera has been rotating with regards
-                                                     to the view center. */
+    float m_rotationInversFactor = 1.0f;             /**< The factor used to invers the camera rotation. */
+    const float m_fZoomInLimit = 0.04f;         /**< The minimum distance of the camera to the the view center. */
 };
 
 //=============================================================================================================

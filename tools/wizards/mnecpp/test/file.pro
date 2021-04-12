@@ -39,16 +39,13 @@ TEMPLATE = app
 VERSION = $${MNE_CPP_VERSION}
 
 QT += testlib network
-QT -= gui
+QT += gui
 
 CONFIG   += console
-!contains(MNECPP_CONFIG, withAppBundles) {
-    CONFIG -= app_bundle
-}
-
-DESTDIR = $${MNE_BINARY_DIR}
+CONFIG   -= app_bundle
 
 TARGET = %{ProjectName}
+
 CONFIG(debug, debug|release) {
     TARGET = $$join(TARGET,,,d)
 }
@@ -66,7 +63,11 @@ CONFIG(debug, debug|release) {
             -lMNE$${MNE_LIB_VERSION}Mne \\
 }
 
+DESTDIR = $${MNE_BINARY_DIR}
+
 SOURCES += %{CppFileName}
+
+HEADERS  += \
 
 INCLUDEPATH += $${EIGEN_INCLUDE_DIR}
 INCLUDEPATH += $${MNE_INCLUDE_DIR}
@@ -76,12 +77,14 @@ contains(MNECPP_CONFIG, withCodeCov) {
     QMAKE_LFLAGS += --coverage
 }
 
+# Deploy dependencies
+win32:!contains(MNECPP_CONFIG, static) {
+    EXTRA_ARGS =
+    DEPLOY_CMD = $$winDeployAppArgs($${TARGET},$${TARGET_EXT},$${MNE_BINARY_DIR},$${LIBS},$${EXTRA_ARGS})
+    QMAKE_POST_LINK += $${DEPLOY_CMD}
+}
 unix:!macx {
     QMAKE_RPATHDIR += $ORIGIN/../lib
-}
-
-macx {
-    QMAKE_LFLAGS += -Wl,-rpath,../lib
 }
 
 # Activate FFTW backend in Eigen for non-static builds only

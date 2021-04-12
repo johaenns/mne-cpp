@@ -410,6 +410,7 @@ void ChannelSelectionView::updateDataView()
                 i.remove();
             }
         }
+        SelectionSceneItem* test = static_cast<SelectionSceneItem*>(visibleItemList.first());
         emit selectionChanged(visibleItemList);
     }
 }
@@ -448,9 +449,8 @@ void ChannelSelectionView::loadSettings()
 
     QPoint pos = settings.value(m_sSettingsPath + QString("/ChannelSelectionView/channelSelectionViewPos"), QPoint(100,100)).toPoint();
 
-    QList<QScreen*> screensList = QGuiApplication::screens();
-    if(screensList.isEmpty())
-    {
+    QRect screenRect = QApplication::desktop()->screenGeometry();
+    if(!screenRect.contains(pos) && QGuiApplication::screens().size() == 1) {
         move(QPoint(100,100));
     } else {
         move(pos);
@@ -569,7 +569,6 @@ bool ChannelSelectionView::loadLayout(QString path)
 
 bool ChannelSelectionView::loadSelectionGroups(QString path)
 {
-
     //Clear the visible channel list
     m_pUi->m_listWidget_visibleChannels->clear();
 
@@ -674,7 +673,7 @@ void ChannelSelectionView::updateSelectionGroupsList(QListWidgetItem* current, Q
     else
         m_pSelectionScene->m_iChannelTypeMode = FIFFV_MEG_CH;
 
-    //update visible channel list widget
+    //update visible channel list widget    
     m_pUi->m_listWidget_visibleChannels->clear();
     m_pUi->m_listWidget_visibleChannels->addItems(m_selectionGroupsMap[current->text()]);
 
@@ -842,18 +841,4 @@ QWidget* ChannelSelectionView::getViewWidget()
 QWidget* ChannelSelectionView::getControlWidget()
 {
     return m_pUi->controlWidget;
-}
-
-//=============================================================================================================
-
-bool ChannelSelectionView::isSelectionEmpty()
-{
-    return ((m_pUi->m_listWidget_selectionGroups->currentItem()->text() == "All") && (m_pUi->m_listWidget_userDefined->count() == 0));
-}
-
-//=============================================================================================================
-
-void ChannelSelectionView::clearView()
-{
-    m_pSelectionScene->clear();
 }

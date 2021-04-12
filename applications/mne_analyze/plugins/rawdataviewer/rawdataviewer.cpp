@@ -88,7 +88,7 @@ RawDataViewer::~RawDataViewer()
 
 //=============================================================================================================
 
-QSharedPointer<AbstractPlugin> RawDataViewer::clone() const
+QSharedPointer<IPlugin> RawDataViewer::clone() const
 {
     QSharedPointer<RawDataViewer> pRawDataViewerClone = QSharedPointer<RawDataViewer>::create();
     return pRawDataViewerClone;
@@ -106,8 +106,8 @@ void RawDataViewer::init()
     m_pFiffRawView->setFocusPolicy(Qt::TabFocus);
     m_pFiffRawView->setAttribute(Qt::WA_DeleteOnClose, false);
 
-    connect(m_pFiffRawView.data(), &FiffRawView::sendSamplePos,
-            this, &RawDataViewer::onSendSamplePos, Qt::UniqueConnection);
+    connect(m_pAnalyzeData.data(), &AnalyzeData::modelIsEmpty,
+            this, &RawDataViewer::onModelIsEmpty);
 }
 
 //=============================================================================================================
@@ -149,54 +149,44 @@ QWidget *RawDataViewer::getView()
 void RawDataViewer::handleEvent(QSharedPointer<Event> e)
 {
     switch (e->getType()) {
-    case EVENT_TYPE::TRIGGER_REDRAW:
+    case TRIGGER_REDRAW:
         if(m_pFiffRawView) {
             m_pFiffRawView->updateView();
         }
         break;
-    case EVENT_TYPE::TRIGGER_VIEWER_MOVE:
+    case TRIGGER_VIEWER_MOVE:
         m_pFiffRawView->updateScrollPositionToAnnotation();
         break;
-    case EVENT_TYPE::TRIGGER_ACTIVE_CHANGED:
+    case TRIGGER_ACTIVE_CHANGED:
         m_pFiffRawView->getModel()->toggleDispAnnotation(e->getData().toInt());
         m_pFiffRawView->updateView();
         break;
-    case EVENT_TYPE::SELECTED_MODEL_CHANGED:
+    case SELECTED_MODEL_CHANGED:
         onModelChanged(e->getData().value<QSharedPointer<ANSHAREDLIB::AbstractModel> >());
         break;
-    case EVENT_TYPE::FILTER_CHANNEL_TYPE_CHANGED:
+    case FILTER_CHANNEL_TYPE_CHANGED:
         m_pFiffRawView->setFilterChannelType(e->getData().toString());
         break;
-    case EVENT_TYPE::FILTER_ACTIVE_CHANGED:
+    case FILTER_ACTIVE_CHANGED:
         m_pFiffRawView->setFilterActive(e->getData().toBool());
         break;
-    case EVENT_TYPE::FILTER_DESIGN_CHANGED:
+    case FILTER_DESIGN_CHANGED:
         m_pFiffRawView->setFilter(e->getData().value<FilterKernel>());
         break;
-    case EVENT_TYPE::CHANNEL_SELECTION_ITEMS:
+    case CHANNEL_SELECTION_ITEMS:
         if (e->getData().value<DISPLIB::SelectionItem*>()->m_sViewsToApply.contains("signalview")){
-            if(m_pFiffRawView->getModel().isNull()){
-                return;
-            }
-            if(e->getData().value<DISPLIB::SelectionItem*>()->m_bShowAll){
-                m_pFiffRawView->showAllChannels();
-            } else {
-                m_pFiffRawView->showSelectedChannelsOnly(e->getData().value<DISPLIB::SelectionItem*>()->m_iChannelNumber);
-            }
+            m_pFiffRawView->showSelectedChannelsOnly(e->getData().value<DISPLIB::SelectionItem*>()->m_iChannelNumber);
         }
         break;
-    case EVENT_TYPE::SCALING_MAP_CHANGED:
+    case SCALING_MAP_CHANGED:
         if(e->getData().value<ANSHAREDLIB::ScalingParameters>().m_sViewsToApply.contains("signalview")){
             m_pFiffRawView->setScalingMap(e->getData().value<ANSHAREDLIB::ScalingParameters>().m_mScalingMap);
         }
         break;
-    case EVENT_TYPE::VIEW_SETTINGS_CHANGED:
+    case VIEW_SETTINGS_CHANGED:
         if(e->getData().value<ANSHAREDLIB::ViewParameters>().m_sViewsToApply.contains("signalview")){
             updateViewParameters(e->getData().value<ANSHAREDLIB::ViewParameters>());
         }
-        break;
-    case EVENT_TYPE::MODEL_REMOVED:
-        onModelRemoved(e->getData().value<QSharedPointer<ANSHAREDLIB::AbstractModel>>());
         break;
     default:
         qWarning() << "[RawDataViewer::handleEvent] Received an Event that is not handled by switch cases.";
@@ -218,7 +208,6 @@ QVector<EVENT_TYPE> RawDataViewer::getEventSubscriptions(void) const
     temp.push_back(CHANNEL_SELECTION_ITEMS);
     temp.push_back(SCALING_MAP_CHANGED);
     temp.push_back(VIEW_SETTINGS_CHANGED);
-    temp.push_back(MODEL_REMOVED);
 
     return temp;
 }
@@ -244,10 +233,39 @@ void RawDataViewer::onModelChanged(QSharedPointer<AbstractModel> pNewModel)
         }
 
         m_pFiffRawView->setModel(qSharedPointerCast<FiffRawViewModel>(pNewModel));
-    } else if(pNewModel->getType() == MODEL_TYPE::ANSHAREDLIB_ANNOTATION_MODEL) {
-        if (qSharedPointerCast<AnnotationModel>(pNewModel)->getFiffModel() == m_pFiffRawView->getModel()){
-            m_pFiffRawView->getModel()->setAnnotationModel(qSharedPointerCast<AnnotationModel>(pNewModel));
-        }
+
+        updateControls();
+    }
+}
+
+//=============================================================================================================
+
+void RawDataViewer::updateControls()
+{
+    if(m_pSettingsViewWidget) {
+        // Setup view settings widget
+        connect(m_pSettingsViewWidget.data(), &DISPLIB::FiffRawViewSettings::signalColorChanged,
+                m_pFiffRawView.data(), &FiffRawView::setSignalColor, Qt::UniqueConnection);
+        connect(m_pSettingsViewWidget.data(), &DISPLIB::FiffRawViewSettings::backgroundColorChanged,
+                m_pFiffRawView.data(), &FiffRawView::setBackgroundColor, Qt::UniqueConnection);
+        connect(m_pSettingsViewWidget.data(), &DISPLIB::FiffRawViewSettings::zoomChanged,
+                m_pFiffRawView.data(), &FiffRawView::setZoom, Qt::UniqueConnection);
+        connect(m_pSettingsViewWidget.data(), &DISPLIB::FiffRawViewSettings::timeWindowChanged,
+                m_pFiffRawView.data(), &FiffRawView::setWindowSize, Qt::UniqueConnection);
+        connect(m_pSettingsViewWidget.data(), &DISPLIB::FiffRawViewSettings::distanceTimeSpacerChanged,
+                m_pFiffRawView.data(), &FiffRawView::setDistanceTimeSpacer, Qt::UniqueConnection);
+        connect(m_pSettingsViewWidget.data(), &DISPLIB::FiffRawViewSettings::makeScreenshot,
+                m_pFiffRawView.data(), &FiffRawView::onMakeScreenshot, Qt::UniqueConnection);
+
+        // Preserve settings between different file sessions
+        m_pFiffRawView->setWindowSize(m_pSettingsViewWidget->getWindowSize());
+        m_pFiffRawView->setSignalColor(m_pSettingsViewWidget->getSignalColor());
+        m_pFiffRawView->setBackgroundColor(m_pSettingsViewWidget->getBackgroundColor());
+        m_pFiffRawView->setZoom(m_pSettingsViewWidget->getZoom());
+        m_pFiffRawView->setDistanceTimeSpacer(m_pSettingsViewWidget->getDistanceTimeSpacer());
+
+        connect(m_pFiffRawView.data(), &FiffRawView::sendSamplePos,
+                this, &RawDataViewer::onSendSamplePos, Qt::UniqueConnection);
     }
 }
 
@@ -265,10 +283,6 @@ void RawDataViewer::onSendSamplePos(int iSample)
 
 void RawDataViewer::updateViewParameters(ANSHAREDLIB::ViewParameters viewParameters)
 {
-    if(m_pFiffRawView->getModel().isNull()){
-        return;
-    }
-
     switch (viewParameters.m_sSettingsToApply){
         case ANSHAREDLIB::ViewParameters::ViewSetting::signal:
             m_pFiffRawView->setSignalColor(viewParameters.m_colorSignal);
@@ -300,17 +314,5 @@ void RawDataViewer::updateViewParameters(ANSHAREDLIB::ViewParameters viewParamet
         break;
         default:
             qDebug() << "Unknown setting";
-    }
-}
-
-//=============================================================================================================
-
-void RawDataViewer::onModelRemoved(QSharedPointer<ANSHAREDLIB::AbstractModel> pRemovedModel)
-{
-    if(pRemovedModel->getType() == MODEL_TYPE::ANSHAREDLIB_FIFFRAW_MODEL) {
-        if(m_pFiffRawView->getModel() == pRemovedModel) {
-            m_pFiffRawView->clearView();
-            return;
-        }
     }
 }

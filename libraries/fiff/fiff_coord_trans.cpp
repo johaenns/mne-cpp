@@ -132,10 +132,10 @@ bool FiffCoordTrans::invert_transform()
 
 bool FiffCoordTrans::read(QIODevice& p_IODevice, FiffCoordTrans& p_Trans)
 {
-    FiffStream::SPtr pStream(new FiffStream(&p_IODevice));
+    FiffStream::SPtr t_pStream(new FiffStream(&p_IODevice));
 
-    printf("Reading coordinate transform from %s...\n", pStream->streamName().toUtf8().constData());
-    if(!pStream->open())
+    printf("Reading coordinate transform from %s...\n", t_pStream->streamName().toUtf8().constData());
+    if(!t_pStream->open())
         return false;
 
     //
@@ -147,36 +147,17 @@ bool FiffCoordTrans::read(QIODevice& p_IODevice, FiffCoordTrans& p_Trans)
     //
     //   Get the MRI <-> head coordinate transformation
     //
-    for ( qint32 k = 0; k < pStream->dir().size(); ++k )
+    for ( qint32 k = 0; k < t_pStream->dir().size(); ++k )
     {
-        if ( pStream->dir()[k]->kind == FIFF_COORD_TRANS )
+        if ( t_pStream->dir()[k]->kind == FIFF_COORD_TRANS )
         {
-            pStream->read_tag(t_pTag,pStream->dir()[k]->pos);
+            t_pStream->read_tag(t_pTag,t_pStream->dir()[k]->pos);
             p_Trans = t_pTag->toCoordTrans();
             success = true;
         }
     }
 
     return success;
-}
-
-//=============================================================================================================
-
-void FiffCoordTrans::write(QIODevice &qIODevice)
-{
-    // Create the file and save the essentials
-    FiffStream::SPtr pStream = FiffStream::start_file(qIODevice);
-    printf("Write coordinate transform in %s...\n", pStream->streamName().toUtf8().constData());
-    this->writeToStream(pStream.data());
-    pStream->end_file();
-    qIODevice.close();
-}
-
-//=============================================================================================================
-
-void FiffCoordTrans::writeToStream(FiffStream* pStream)
-{
-    pStream->write_coord_trans(*this);
 }
 
 //=============================================================================================================

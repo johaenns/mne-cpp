@@ -72,15 +72,15 @@ AverageSceneItem::AverageSceneItem(const QString& channelName,
                                    const QColor &color)
 : m_sChannelName(channelName)
 , m_iChannelNumber(channelNumber)
+, m_qpChannelPosition(channelPosition)
 , m_iChannelKind(channelKind)
 , m_iChannelUnit(channelUnit)
-, m_iTotalNumberChannels(0)
 , m_iFontTextSize(15)
 , m_iMaxWidth(1500)
 , m_iMaxHeigth(150)
 , m_bIsBad(false)
-, m_qpChannelPosition(channelPosition)
-, m_colorDefault(color)
+, m_iTotalNumberChannels(0)
+, m_colorDefault(Qt::yellow)
 {
     m_rectBoundingRect = QRectF(-m_iMaxWidth/2, -m_iMaxHeigth/2, m_iMaxWidth, m_iMaxHeigth);
 }

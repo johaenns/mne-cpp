@@ -41,7 +41,7 @@
 
 #include "averaging_global.h"
 
-#include <anShared/Plugins/abstractplugin.h>
+#include <anShared/Interfaces/IPlugin.h>
 
 #include <rtprocessing/helpers/filterkernel.h>
 
@@ -59,7 +59,6 @@
 namespace ANSHAREDLIB {
     class FiffRawViewModel;
     class AbstractModel;
-    class AveragingDataModel;
     class Communicator;
 }
 
@@ -77,7 +76,6 @@ namespace FIFFLIB {
     class FiffEvokedSet;
     class FiffEvoked;
     class FiffInfo;
-    class FiffRawData;
 }
 
 //=============================================================================================================
@@ -97,12 +95,12 @@ namespace AVERAGINGPLUGIN
  *
  * @brief The averaging class provides a plugin for computing averages.
  */
-class AVERAGINGSHARED_EXPORT Averaging : public ANSHAREDLIB::AbstractPlugin
+class AVERAGINGSHARED_EXPORT Averaging : public ANSHAREDLIB::IPlugin
 {
     Q_OBJECT
     Q_PLUGIN_METADATA(IID "ansharedlib/1.0" FILE "averaging.json") //New Qt5 Plugin system replaces Q_EXPORT_PLUGIN2 macro
     // Use the Q_INTERFACES() macro to tell Qt's meta-object system about the interfaces
-    Q_INTERFACES(ANSHAREDLIB::AbstractPlugin)
+    Q_INTERFACES(ANSHAREDLIB::IPlugin)
 
 public:
     //=========================================================================================================
@@ -117,8 +115,8 @@ public:
      */
     ~Averaging() override;
 
-    // AbstractPlugin functions
-    virtual QSharedPointer<AbstractPlugin> clone() const override;
+    // IPlugin functions
+    virtual QSharedPointer<IPlugin> clone() const override;
     virtual void init() override;
     virtual void unload() override;
     virtual QString getName() const override;
@@ -133,7 +131,6 @@ public:
 signals:
     //=========================================================================================================
     void showSelectedChannels(const QList<int> selectedChannelsIndexes);
-    void showAllChannels();
     void channelSelectionManagerChanged(const QVariant &data);
     void layoutChanged(const QMap<QString,QPointF> &layoutMap);
 private:
@@ -144,21 +141,6 @@ private:
      * @param [in,out] pNewModel    pointer to currently loaded FiffRawView Model
      */
     void onModelChanged(QSharedPointer<ANSHAREDLIB::AbstractModel> pNewModel);
-
-    //=========================================================================================================
-    /**
-     * Handles clearing view if currently used model is being removed
-     *
-     * @param [in] pRemovedModel    Pointer to model being removed
-     */
-    void onModelRemoved(QSharedPointer<ANSHAREDLIB::AbstractModel> pRemovedModel);
-
-    //=========================================================================================================
-    /**
-     * @brief onNewAveragingModel
-     * @param pAveragingModel
-     */
-    void onNewAveragingModel(QSharedPointer<ANSHAREDLIB::AveragingDataModel> pAveragingModel);
 
     //=========================================================================================================
     /**
@@ -226,26 +208,9 @@ private:
 
     //=========================================================================================================
     /**
-     * Triggers averageCalculations to be run with QFuture.
+     * Computes average and updates butterfly and 2D layout views
      */
     void computeAverage();
-
-    //=========================================================================================================
-    /**
-     * Calculates average and returns FiffEvoked Set. (Run in separate thread with QFuture)
-     *
-     * @return Retruns FiffEvoked setwith averaged data
-     */
-    QSharedPointer<FIFFLIB::FiffEvokedSet> averageCalculation(FIFFLIB::FiffRawData pFiffRaw,
-                                                              MatrixXi matEvents,
-                                                              RTPROCESSINGLIB::FilterKernel filterKernel,
-                                                              FIFFLIB::FiffInfo fiffInfo);
-
-    //=========================================================================================================
-    /**
-     * Receives FiffEvoked set from QFuture and created new averaging model
-     */
-    void createNewAverage();
 
     //=========================================================================================================
     /**
@@ -265,7 +230,7 @@ private:
     /**
      *  Loads averging GUI components that are dependent on FiffRawModel to be initialized
      */
-    void loadFullGui(QSharedPointer<FIFFLIB::FiffInfo> pInfo);
+    void loadFullGui();
 
     //=========================================================================================================
     /**
@@ -293,6 +258,12 @@ private:
 
     //=========================================================================================================
     /**
+     * Clears saved averaging data
+     */
+    void clearAveraging();
+
+    //=========================================================================================================
+    /**
      * Updates the dropdown display for selecting from which group to average
      */
     void updateGroups();
@@ -305,22 +276,10 @@ private:
      */
     void onMakeScreenshot(const QString& imageType);
 
-    //=============================================================================================================
-    /**
-     * Sends event to trigger loading bar to appear and sMessage to show
-     *
-     * @param [in] sMessage     loading bar message
-     */
-    void triggerLoadingStart(QString sMessage);
-
-    //=============================================================================================================
-    /**
-     * Sends event to hide loading bar
-     */
-    void triggerLoadingEnd(QString sMessage);
-
     QSharedPointer<ANSHAREDLIB::FiffRawViewModel>           m_pFiffRawModel;            /**< Pointer to currently loaded FiffRawView Model */
     QSharedPointer<QList<QPair<int,double>>>                m_pTriggerList;             /**< Pointer to list of stim triggers */
+    QSharedPointer<FIFFLIB::FiffEvoked>                     m_pFiffEvoked;              /**< Pointer to object to store averaging data */
+    QSharedPointer<FIFFLIB::FiffEvokedSet>                  m_pFiffEvokedSet;           /**< Pointer to object that can store m_pFiffEvoked and be added to a model */
     QSharedPointer<DISPLIB::EvokedSetModel>                 m_pEvokedModel;             /**< Pointer to model used to display averaging data from m_pFiffEvokedSet and m_pFiffEvoked */
     QSharedPointer<DISPLIB::ChannelInfoModel>               m_pChannelInfoModel;        /**< Pointer to model that holds channel info data */
     QSharedPointer<FIFFLIB::FiffInfo>                       m_pFiffInfo;                /**< Pointer to info about loaded fiff data */
@@ -348,12 +307,6 @@ private:
     RTPROCESSINGLIB::FilterKernel                           m_filterKernel;             /**< List of currently active filters. */
 
     int                                                     m_iCurrentGroup;            /**< Event group from which to compute average. 9999 for current selection */
-
-    QFutureWatcher<QSharedPointer<FIFFLIB::FiffEvokedSet>>  m_FutureWatcher;            /**< Future watcher for notifing of completed average calculations */
-    QFuture<QSharedPointer<FIFFLIB::FiffEvokedSet>>         m_Future;                   /**< Future for performing average calculations of separate thread */
-
-    QMutex                                                  m_ParameterMutex;           /**< Mutex for thread-safing */
-
 };
 
 } // NAMESPACE

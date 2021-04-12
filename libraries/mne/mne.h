@@ -4,13 +4,12 @@
  * @author   Lorenz Esch <lesch@mgh.harvard.edu>;
  *           Matti Hamalainen <msh@nmr.mgh.harvard.edu>;
  *           Christoph Dinh <chdinh@nmr.mgh.harvard.edu>
- *           Gabriel Motta <gbmotta@mgh.harvard.edu>
  * @since    0.1.0
  * @date     July, 2012
  *
  * @section  LICENSE
  *
- * Copyright (C) 2012, Lorenz Esch, Matti Hamalainen, Christoph Dinh, Gabriel Motta. All rights reserved.
+ * Copyright (C) 2012, Lorenz Esch, Matti Hamalainen, Christoph Dinh. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without modification, are permitted provided that
  * the following conditions are met:
@@ -239,11 +238,7 @@ public:
                                                      const QStringList& bads = FIFFLIB::defaultQStringList,
                                                      Eigen::MatrixXd& U = FIFFLIB::defaultMatrixXd)
     {
-        return FIFFLIB::FiffProj::make_projector(projs,
-                                                 ch_names,
-                                                 proj,
-                                                 bads,
-                                                 U);
+        return FIFFLIB::FiffProj::make_projector(projs, ch_names, proj, bads, U);
     }
 
     //=========================================================================================================
@@ -261,8 +256,7 @@ public:
      *
      * @return nproj - How many items in the projector
      */
-    static inline qint32 make_projector(FIFFLIB::FiffInfo& info,
-                                        Eigen::MatrixXd& proj)
+    static inline qint32 make_projector(FIFFLIB::FiffInfo& info, Eigen::MatrixXd& proj)
     {
         return info.make_projector(proj);
     }
@@ -302,18 +296,12 @@ public:
      *
      * @return the prepared inverse operator
      */
-    inline static MNEInverseOperator prepare_inverse_operator(MNEInverseOperator& orig,
-                                                              qint32 nave,
-                                                              float lambda2,
-                                                              bool dSPM,
-                                                              bool sLORETA = false)
+    inline static MNEInverseOperator prepare_inverse_operator(MNEInverseOperator& orig, qint32 nave ,float lambda2, bool dSPM, bool sLORETA = false)
     {
         return orig.prepare_inverse_operator(nave, lambda2, dSPM, sLORETA);
     }
 
-    static bool read_events(QString t_sEventName,
-                            QString t_fileRawName,
-                            Eigen::MatrixXi& events);
+    static bool read_events(QString t_sEventName, QString t_fileRawName, Eigen::MatrixXi& events);
 
 // ToDo Eventlist Class??
     //=========================================================================================================
@@ -329,22 +317,7 @@ public:
      *
      * @return true if succeeded, false otherwise
      */
-    static bool read_events_from_fif(QIODevice &p_IODevice,
-                                     Eigen::MatrixXi& eventlist);
-
-    //=========================================================================================================
-    /**
-     * read_events
-     *
-     * Read a list of events from an eve file
-     *
-     * @param [in] p_IODevice   The I/O device to read from
-     * @param [out] eventList   List of events
-     *
-     * @return true if succeeded, false otherwise
-     */
-    static bool read_events_from_ascii(QIODevice &p_IODevice,
-                                       Eigen::MatrixXi& eventlist);
+    static bool read_events(QIODevice &p_IODevice, Eigen::MatrixXi& eventlist);
 
     static void setup_compensators(FIFFLIB::FiffRawData& raw,
                                    FIFFLIB::fiff_int_t dest_comp,
@@ -372,9 +345,7 @@ public:
                                 FIFFLIB::fiff_int_t cov_kind,
                                 FIFFLIB::FiffCov& p_covData)
     {
-        return p_pStream->read_cov(p_Node,
-                                   cov_kind,
-                                   p_covData);
+        return p_pStream->read_cov(p_Node, cov_kind, p_covData);
     }
 
     //=========================================================================================================
@@ -392,11 +363,9 @@ public:
      *
      * @return true if succeeded, false otherwise
      */
-    static bool read_inverse_operator(QIODevice& p_pIODevice,
-                                      MNEInverseOperator& inv)
+    static bool read_inverse_operator(QIODevice& p_pIODevice, MNEInverseOperator& inv)
     {
-        return MNEInverseOperator::read_inverse_operator(p_pIODevice,
-                                                         inv);
+        return MNEInverseOperator::read_inverse_operator(p_pIODevice, inv);
     }
 
     //=========================================================================================================
@@ -425,12 +394,7 @@ public:
                                              const QStringList& include = FIFFLIB::defaultQStringList,
                                              const QStringList& exclude = FIFFLIB::defaultQStringList)
     {
-        return MNEForwardSolution::read(p_IODevice,
-                                        fwd,
-                                        force_fixed,
-                                        surf_ori,
-                                        include,
-                                        exclude);
+        return MNEForwardSolution::read(p_IODevice, fwd, force_fixed, surf_ori, include, exclude);
     }
 
     //=========================================================================================================
@@ -454,9 +418,7 @@ public:
                                    bool add_geom,
                                    MNESourceSpace& p_SourceSpace)
     {
-        return MNESourceSpace::readFromStream(p_pStream,
-                                              add_geom,
-                                              p_SourceSpace);
+        return MNESourceSpace::readFromStream(p_pStream, add_geom, p_SourceSpace);
     }
 
     //=========================================================================================================
@@ -482,10 +444,7 @@ public:
                                  FIFFLIB::FiffDirNode::SPtr& p_Tree,
                                  QList<MNESurface::SPtr>& p_Surfaces)
     {
-        return MNESurface::read(p_pStream,
-                                add_geom,
-                                p_Tree,
-                                p_Surfaces);
+        return MNESurface::read(p_pStream, add_geom, p_Tree, p_Surfaces);
     }
 
     //ToDo FiffChInfoList Class
@@ -509,8 +468,7 @@ public:
     static QList<FIFFLIB::FiffChInfo> set_current_comp(QList<FIFFLIB::FiffChInfo>& chs,
                                               FIFFLIB::fiff_int_t value)
     {
-        return FIFFLIB::FiffInfo::set_current_comp(chs,
-                                                   value);
+        return FIFFLIB::FiffInfo::set_current_comp(chs, value);
     }
 
     //=========================================================================================================
@@ -533,8 +491,7 @@ public:
                                                  FIFFLIB::fiff_int_t dest,
                                                  FIFFLIB::FiffCoordTrans& trans)
     {
-        return p_pMNESourceSpace.transform_source_space_to(dest,
-                                                           trans);
+        return p_pMNESourceSpace.transform_source_space_to(dest, trans);
     }
 
     //=========================================================================================================

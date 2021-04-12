@@ -78,7 +78,6 @@
 #include <QDir>
 #include <QSettings>
 #include <QEvent>
-#include <QToolBar>
 
 //=============================================================================================================
 // USED NAMESPACES
@@ -100,10 +99,11 @@ RealTimeEvokedSetWidget::RealTimeEvokedSetWidget(QSharedPointer<QTime> &pTime,
 {
     Q_UNUSED(pTime)
 
-    QAction* pActionSelectSensors = new QAction(QIcon(":/images/selectSensors.png"), tr("Show the channel selection window"),this);
-    pActionSelectSensors->setStatusTip(tr("Show the channel selection view"));
-    connect(pActionSelectSensors, &QAction::triggered,
+    m_pActionSelectSensors = new QAction(QIcon(":/images/selectSensors.png"), tr("Show the channel selection window"),this);
+    m_pActionSelectSensors->setStatusTip(tr("Show the channel selection view"));
+    connect(m_pActionSelectSensors.data(), &QAction::triggered,
             this, &RealTimeEvokedSetWidget::showSensorSelectionWidget);
+    addDisplayAction(m_pActionSelectSensors);
 
     //Create GUI
     m_pRTESetLayout = new QVBoxLayout(this);
@@ -122,10 +122,6 @@ RealTimeEvokedSetWidget::RealTimeEvokedSetWidget(QSharedPointer<QTime> &pTime,
     //Create toolboxes with butterfly and 2D layout plot
     m_pToolBox = new QToolBox(this);
     m_pToolBox->hide();
-
-    // Create tool bar
-    QToolBar* pToolBar = new QToolBar;
-    pToolBar->addAction(pActionSelectSensors);
 
     //Butterfly
     m_pButterflyView = new ButterflyView("MNESCAN/RTESW", this);
@@ -160,6 +156,8 @@ RealTimeEvokedSetWidget::~RealTimeEvokedSetWidget()
             settings.setValue(QString("MNESCAN/RTESW/selectedView"), m_pToolBox->currentIndex());
         }
     }
+
+    delete m_pActionSelectSensors;
 }
 
 //=============================================================================================================
@@ -316,7 +314,7 @@ void RealTimeEvokedSetWidget::initDisplayControllWidgets()
 //        }
 
         // Scaling
-        ScalingView* pScalingView = new ScalingView(QString("MNESCAN/RTESW"),0, Qt::Widget, m_pFiffInfo->get_channel_types());
+        ScalingView* pScalingView = new ScalingView(QString("MNESCAN/RTESW"));
         pScalingView->setObjectName("group_tab_View_Scaling");
         lControlWidgets.append(pScalingView);
 

@@ -82,12 +82,7 @@ namespace ANSHAREDLIB
         ANSHAREDLIB_QENTITYLIST_MODEL,
         ANSHAREDLIB_ECDSET_MODEL,
         ANSHAREDLIB_FIFFRAW_MODEL,
-        ANSHAREDLIB_ANNOTATION_MODEL,
-        ANSHAREDLIB_AVERAGING_MODEL,
-        ANSHAREDLIB_BEMDATA_MODEL,
-        ANSHAREDLIB_NOISE_MODEL,
-        ANSHAREDLIB_MRICOORD_MODEL,
-        ANSHAREDLIB_DIPOLEFIT_MODEL
+        ANSHAREDLIB_ANNOTATION_MODEL
     };
 
     //=========================================================================================================
@@ -96,33 +91,21 @@ namespace ANSHAREDLIB
      */
     enum EVENT_TYPE
     {
-        PING,                       ///< [NO DATA] Dummy event for testing and debuggin purposes
-        PLUGIN_INIT_FINISHED,       ///< [NO DATA] Send when all plugins finished initializing
-        STATUS_BAR_MSG,             ///< [QString] Send a message to the status bar (part of gui)
-        SELECTED_MODEL_CHANGED,     ///< [QSharedPointer<ANSHAREDLIB::AbstractModel>>] Send whenever the selection changes in the datamanager plugin
-        NEW_ANNOTATION_ADDED,       ///< [int] event send whenever the user adds a new annotation in the rawdataviewer plugin
-        EVENT_GROUPS_UPDATED,       ///< [NO DATA] send when plugins dependent on event groups need to be updated
-        TRIGGER_REDRAW,             ///< [NO DATA] send when viewer needs to be updated
-        TRIGGER_ACTIVE_CHANGED,     ///< [int] send when the trigger active state was toggled
-        TRIGGER_VIEWER_MOVE,        ///< [NO DATA] send when scroll position of viewer needs to be moved
-        FILTER_CHANNEL_TYPE_CHANGED,///< [QString] send when the channel type to be filtered changed
-        FILTER_ACTIVE_CHANGED,      ///< [bool] send when the filter active state was toggled
-        FILTER_DESIGN_CHANGED,      ///< [FilterKernel] send when the designed filter changed
-        CHANNEL_SELECTION_ITEMS,    ///< [send when channel selection changes with channel info about graphic items to draw
-        SCALING_MAP_CHANGED,        ///< [DISPLIB::SelectionItem*] send when view scaling controls are updated
-        VIEW_SETTINGS_CHANGED,      ///< [ANSHAREDLIB::ViewParameters] send to trigger view settings update
-        LOADING_START,              ///< [QString] send to start status bar loaidng bar and message
-        LOADING_END,                ///< [QString] send to end status bar loading bar and message
-        SELECTED_BEM_CHANGED,       ///< [QSharedPointer<ANSHAREDLIB::BemDataModel>] event send whenever the Bem file within the coregistration changed
-        NEW_DIGITIZER_ADDED,        ///< [FIFFLIB::FiffDigPointSet] event send whenever new digitizers are loaded
-        NEW_FIDUCIALS_ADDED,        ///< [FIFFLIB::FiffDigPointSet] event send whenever new fiducials are loaded
-        NEW_TRANS_AVAILABE,         ///< [FIFFLIB::FiffCoordTrans] event send whenever a new head-mri transformation is available
-        FID_PICKING_STATUS,         ///< [bool] event send whenever status of fiducial picking has changed
-        NEW_FIDUCIAL_PICKED,        ///< [QVector3D] event send whenever a new fiducial was picked
-        FIDUCIAL_CHANGED,           ///< [int] event send when fiducial was changed
-        SET_DATA3D_TREE_MODEL,      ///< [QSharedPointer<DISP3DLIB::Data3DTreeModel>] send when a new 3D Model is set
-        VIEW3D_SETTINGS_CHANGED,    ///< [ANSHAREDLIB::View3DParameters] send to trigger view 3D settings update
-        MODEL_REMOVED               ///< [QSharedPointer<ANSHAREDLIB::AbstractModel>>] send to alert plugins when model is being removed
+        PING,                       // dummy event for testing and debuggin purposes
+        PLUGIN_INIT_FINISHED,       // send when all plugins finished initializing
+        STATUS_BAR_MSG,             // sending a message to the status bar (part of gui)
+        SELECTED_MODEL_CHANGED,     // event send whenever the user changes the selection in the datamanager plugin
+        NEW_ANNOTATION_ADDED,       // event send whenever the user adds a new annotation in the rawdataviewer plugin
+        EVENT_GROUPS_UPDATED,       // send when plugins dependent on event groups need to be updated
+        TRIGGER_REDRAW,             // send when viewer needs to be updated
+        TRIGGER_ACTIVE_CHANGED,     // send when the trigger active state was toggled
+        TRIGGER_VIEWER_MOVE,        // send when scroll position of viewer needs to be moved
+        FILTER_CHANNEL_TYPE_CHANGED,// send when the channel type to be filtered changed
+        FILTER_ACTIVE_CHANGED,      // send when the filter active state was toggled
+        FILTER_DESIGN_CHANGED,      // send when the designed filter changed
+        CHANNEL_SELECTION_ITEMS,    // send when channel selection changes with channel info about graphic items to draw
+        SCALING_MAP_CHANGED,
+        VIEW_SETTINGS_CHANGED
     };
 
     //=========================================================================================================
@@ -135,9 +118,6 @@ namespace ANSHAREDLIB
     };
 
     //=========================================================================================================
-    /**
-     * Public struct for sending 2D view parameters though the event manager
-     */
     struct ViewParameters{
         enum ViewSetting{
             signal,
@@ -162,30 +142,6 @@ namespace ANSHAREDLIB
 
     //=========================================================================================================
     /**
-     * Public struct for sending 3D view parameters throug hthe event manager
-     */
-    struct View3DParameters{
-        enum View3DSetting{
-            sceneColor,
-            rotation,
-            coordAxis,
-            fullscreen,
-            lightColor,
-            lightIntensity,
-            screenshot
-        };
-
-        View3DSetting       m_settingsToApply;
-        QColor              m_sceneColor;
-        bool                m_bToggleRotation;
-        bool                m_bToogleCoordAxis;
-        bool                m_bToggleFullscreen;
-        QColor              m_lightColor;
-        double              m_dLightIntensity;
-    };
-
-    //=========================================================================================================
-    /**
      * Public struct for sending channel selection parameters through the event manager
      */
 //    struct SelectionParameters{
@@ -199,24 +155,10 @@ namespace ANSHAREDLIB
 } //NAMESPACE
 
 //Declare structs to be used in QVariant
-#ifndef metatype_ANSHAREDLIB_scalingparam
-#define metatype_ANSHAREDLIB_scalingparam
 Q_DECLARE_METATYPE(ANSHAREDLIB::ScalingParameters);
 Q_DECLARE_METATYPE(ANSHAREDLIB::ScalingParameters*);
-#endif
-
-#ifndef metatype_ANSHAREDLIB_viewparam
-#define metatype_ANSHAREDLIB_viewparam
 Q_DECLARE_METATYPE(ANSHAREDLIB::ViewParameters);
 Q_DECLARE_METATYPE(ANSHAREDLIB::ViewParameters*);
-#endif
-
-#ifndef metatype_ANSHAREDLIB_view3Dparam
-#define metatype_ANSHAREDLIB_view3Dparam
-Q_DECLARE_METATYPE(ANSHAREDLIB::View3DParameters);
-Q_DECLARE_METATYPE(ANSHAREDLIB::View3DParameters*);
-#endif
-
 //Q_DECLARE_METATYPE(ANSHAREDLIB::SelectionParameters);
 //Q_DECLARE_METATYPE(ANSHAREDLIB::SelectionParameters*);
 

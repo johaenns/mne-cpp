@@ -40,7 +40,7 @@
 //=============================================================================================================
 
 #include "../scshared_global.h"
-#include "../Plugins/abstractplugin.h"
+#include "../Interfaces/IPlugin.h"
 #include "pluginconnectorconnection.h"
 
 //=============================================================================================================
@@ -72,7 +72,7 @@ public:
     typedef QSharedPointer<PluginSceneManager> SPtr;            /**< Shared pointer type for PluginSceneManager. */
     typedef QSharedPointer<const PluginSceneManager> ConstSPtr; /**< Const shared pointer type for PluginSceneManager. */
 
-    typedef QList< AbstractPlugin::SPtr > PluginList;                                      /**< type for a list of plugins. */
+    typedef QList< IPlugin::SPtr > PluginList;                                      /**< type for a list of plugins. */
     typedef QList<PluginConnectorConnection::SPtr> PluginConnectorConnectionList;   /**< Shared pointer type for PluginConnectorConnection::SPtr list */
 
     //=========================================================================================================
@@ -96,7 +96,7 @@ public:
      *
      *@return true if plugin is added successful.
      */
-    bool addPlugin(const AbstractPlugin* pPlugin, AbstractPlugin::SPtr &pAddedPlugin);
+    bool addPlugin(const IPlugin* pPlugin, IPlugin::SPtr &pAddedPlugin);
 
     inline PluginList& getPlugins();
 
@@ -108,29 +108,29 @@ public:
      *
      *@return true if plugin is removed successful.
      */
-    bool removePlugin(const AbstractPlugin::SPtr pPlugin);
+    bool removePlugin(const IPlugin::SPtr pPlugin);
 
     //=========================================================================================================
     /**
      * Starts all plugins.
      *
-     * @return true if at least one AbstractSensor plugin was started successfully, false otherwise.
+     * @return true if at least one ISensor plugin was started successfully, false otherwise.
      */
     bool startPlugins();
 
     //=========================================================================================================
     /**
-     * Starts AbstractSensor Plugins
+     * Starts ISensor Plugins
      *
-     * @return true if at least one AbstractSensor plugin was started successfully, false otherwise.
+     * @return true if at least one ISensor plugin was started successfully, false otherwise.
      */
     bool startSensorPlugins();
 
     //=========================================================================================================
     /**
-     * Starts AbstractAlgorithm plugins.
+     * Starts IAlgorithm plugins.
      *
-     * @return true if at least one AbstractSensor plugin was started successfully, false otherwise.
+     * @return true if at least one ISensor plugin was started successfully, false otherwise.
      */
     bool startAlgorithmPlugins();
 

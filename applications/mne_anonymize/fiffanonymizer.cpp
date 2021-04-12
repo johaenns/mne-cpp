@@ -88,7 +88,7 @@ FiffAnonymizer::FiffAnonymizer()
 , m_sSubjectFirstName(m_sDefaultString)
 , m_sSubjectMidName("mne")
 , m_sSubjectLastName(m_sDefaultString)
-, m_dSubjectBirthday(QDate(2000,1,1))
+, m_dSubjectBirthday(m_dDefaultDate)
 , m_iSubjectBirthdayOffset(0)
 , m_bUseSubjectBirthdayOffset(false)
 , m_sSubjectComment(m_sDefaultString)
@@ -373,7 +373,7 @@ void FiffAnonymizer::censorTag()
     case FIFF_SUBJ_LAST_NAME:
     {
         QString inStr(m_pTag->data());
-        emit readingSubjectLastName(inStr);
+        readingSubjectLastName(inStr);
         QString outStr(m_sSubjectLastName);
         m_pTag->resize(outStr.size());
         memcpy(m_pTag->data(),outStr.toUtf8(),static_cast<size_t>(outStr.size()));
@@ -382,9 +382,9 @@ void FiffAnonymizer::censorTag()
     }
     case FIFF_SUBJ_BIRTH_DAY:
     {
-        QDate inBirthday(QDate::fromJulianDay(*m_pTag->toJulian()));
-        emit readingSubjectBirthday(inBirthday);
-        QDate outBirthday;
+        QDateTime inBirthday(QDate::fromJulianDay(*m_pTag->toJulian()));
+        readingSubjectBirthday(inBirthday);
+        QDateTime outBirthday;
 
         if(m_bUseSubjectBirthdayOffset)
         {
@@ -394,9 +394,9 @@ void FiffAnonymizer::censorTag()
         }
 
         FIFFLIB::fiff_int_t outData[1];
-        outData[0] = static_cast<int32_t> (outBirthday.toJulianDay());
+        outData[0] = static_cast<int32_t> (outBirthday.toSecsSinceEpoch());
         memcpy(m_pTag->data(),reinterpret_cast<char*>(outData),sizeof(FIFFLIB::fiff_int_t));
-        printIfVerbose("Subject birthday date changed: " + inBirthday.toString("dd.MM.yyyy") + " -> " + outBirthday.toString("dd.MM.yyyy"));
+        printIfVerbose("Subject birthday date changed: " + inBirthday.toString("dd.MM.yyyy hh:mm:ss.zzz t") + " -> " + outBirthday.toString("dd.MM.yyyy hh:mm:ss.zzz t"));
         break;
     }
     case FIFF_SUBJ_SEX:
@@ -454,7 +454,7 @@ void FiffAnonymizer::censorTag()
         QString outStr(m_sSubjectComment);
         m_pTag->resize(outStr.size());
         memcpy(m_pTag->data(),outStr.toUtf8(),static_cast<size_t>(outStr.size()));
-        printIfVerbose("Subject comment changed: " + inStr + " -> " + outStr);
+        printIfVerbose("Subject comment changed: " + QString(m_pTag->data()) + " -> " + outStr);
         break;
     }
     case FIFF_SUBJ_HIS_ID:
@@ -795,19 +795,19 @@ void FiffAnonymizer::setUseMeasurementDateOffset(bool b)
 
 void FiffAnonymizer::setSubjectBirthday(const QString& sSubjBirthday)
 {
-    m_dSubjectBirthday = QDate::fromString(sSubjBirthday,"ddMMyyyy");
+    m_dSubjectBirthday = QDateTime(QDate::fromString(sSubjBirthday,"ddMMyyyy"),QTime(1, 1, 0));
 }
 
 //=============================================================================================================
 
-void FiffAnonymizer::setSubjectBirthday(const QDate& dSubjBirthday)
+void FiffAnonymizer::setSubjectBirthday(const QDateTime& sSubjBirthday)
 {
-    m_dSubjectBirthday = QDate(dSubjBirthday);
+    m_dSubjectBirthday = QDateTime(sSubjBirthday);
 }
 
 //=============================================================================================================
 
-QDate FiffAnonymizer::getSubjectBirthday()
+QDateTime FiffAnonymizer::getSubjectBirthday()
 {
     return m_dSubjectBirthday;
 }

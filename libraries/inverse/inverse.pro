@@ -45,13 +45,13 @@ QT += concurrent
 
 DEFINES += INVERSE_LIBRARY
 
-DESTDIR = $${MNE_LIBRARY_DIR}
-
 TARGET = Inverse
 TARGET = $$join(TARGET,,mnecpp,)
 CONFIG(debug, debug|release) {
     TARGET = $$join(TARGET,,,d)
 }
+
+DESTDIR = $${MNE_LIBRARY_DIR}
 
 contains(MNECPP_CONFIG, static) {
     CONFIG += staticlib
@@ -114,6 +114,14 @@ HEADERS +=\
     hpiFit/hpifit.h \
     hpiFit/hpifitdata.h
 
+RESOURCE_FILES +=\
+    $${ROOT_DIR}/resources/general/coilDefinitions/coil_def.dat \
+    $${ROOT_DIR}/resources/general/coilDefinitions/coil_def_Elekta.dat \
+
+# Copy resource files from repository to bin resource folder
+COPY_CMD = $$copyResources($${RESOURCE_FILES})
+QMAKE_POST_LINK += $${COPY_CMD}
+
 INCLUDEPATH += $${EIGEN_INCLUDE_DIR}
 INCLUDEPATH += $${MNE_INCLUDE_DIR}
 
@@ -135,7 +143,10 @@ win32:!contains(MNECPP_CONFIG, static) {
         #QMAKE_LFLAGS    +=  -openmp
     }
 
-    QMAKE_POST_LINK += $$QMAKE_COPY $$shell_path($${MNE_LIBRARY_DIR}/$${TARGET}.dll) $${MNE_BINARY_DIR}
+    # Deploy/Copy library to bin folder manually (windeployqt only takes care of qt and system libraries)
+    EXTRA_ARGS =
+    DEPLOY_CMD = $$winDeployLibArgs($${TARGET},$${MNE_BINARY_DIR},$${MNE_LIBRARY_DIR},$${EXTRA_ARGS})
+    QMAKE_POST_LINK += $${DEPLOY_CMD}
 }
 
 unix:!macx:!contains(MNECPP_CONFIG, wasm):!contains(MNECPP_CONFIG, static) {
@@ -144,6 +155,7 @@ unix:!macx:!contains(MNECPP_CONFIG, wasm):!contains(MNECPP_CONFIG, static) {
 }
 
 macx {
+    # Change install name of the library so we can use the @rpath when linking executables against it
     QMAKE_LFLAGS_SONAME = -Wl,-install_name,@rpath/
 }
 

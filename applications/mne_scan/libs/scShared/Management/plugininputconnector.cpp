@@ -38,7 +38,7 @@
 //=============================================================================================================
 
 #include "plugininputconnector.h"
-#include "../Plugins/abstractplugin.h"
+#include "../Interfaces/IPlugin.h"
 
 //=============================================================================================================
 // USED NAMESPACES
@@ -50,7 +50,7 @@ using namespace SCSHAREDLIB;
 // DEFINE MEMBER METHODS
 //=============================================================================================================
 
-PluginInputConnector::PluginInputConnector(AbstractPlugin *parent,
+PluginInputConnector::PluginInputConnector(IPlugin *parent,
                                            const QString &name,
                                            const QString &descr)
 : PluginConnector(parent, name, descr)

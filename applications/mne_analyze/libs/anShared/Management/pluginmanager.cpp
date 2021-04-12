@@ -40,7 +40,7 @@ Copyright (C) 2017, Christoph Dinh, Lars Debor, Simon Heinke and Matti Hamalaine
 //=============================================================================================================
 
 #include "pluginmanager.h"
-#include "../Plugins/abstractplugin.h"
+#include "../Interfaces/IPlugin.h"
 #include "communicator.h"
 
 //=============================================================================================================
@@ -70,7 +70,7 @@ PluginManager::PluginManager(QObject *parent)
 
 PluginManager::~PluginManager()
 {
-    for(AbstractPlugin* plugin : m_qVecPlugins)
+    for(IPlugin* plugin : m_qVecPlugins)
     {
         delete plugin;
     }
@@ -85,9 +85,9 @@ void PluginManager::loadPluginsFromDirectory(const QString& dir)
 
     const auto staticInstances = QPluginLoader::staticInstances();
     for(QObject *plugin : staticInstances) {
-        // AbstractPlugin
-        if(AbstractPlugin* pPlugin = qobject_cast<AbstractPlugin*>(plugin)) {
-            m_qVecPlugins.push_back(qobject_cast<AbstractPlugin*>(pPlugin));
+        // IPlugin
+        if(IPlugin* pPlugin = qobject_cast<IPlugin*>(plugin)) {
+            m_qVecPlugins.push_back(qobject_cast<IPlugin*>(pPlugin));
         }
     }
 #else
@@ -99,10 +99,10 @@ void PluginManager::loadPluginsFromDirectory(const QString& dir)
             this->setFileName(pluginsDir.absoluteFilePath(file));
             QObject *pPlugin = this->instance();
 
-            // AbstractPlugin
+            // IPlugin
             if(pPlugin) {
                 qDebug() << "[PluginManager::loadPlugin] Loading Plugin" << file.toUtf8().constData() << "succeeded.";
-                m_qVecPlugins.push_back(qobject_cast<AbstractPlugin*>(pPlugin));
+                m_qVecPlugins.push_back(qobject_cast<IPlugin*>(pPlugin));
             } else {
                 qDebug() << "[PluginManager::loadPlugin] Loading Plugin" << file.toUtf8().constData() << "failed.";
             }
@@ -113,10 +113,12 @@ void PluginManager::loadPluginsFromDirectory(const QString& dir)
 
 //=============================================================================================================
 
-void PluginManager::initPlugins(QSharedPointer<AnalyzeData> data)
+void PluginManager::initPlugins(QSharedPointer<AnalyzeSettings> settings,
+                                QSharedPointer<AnalyzeData> data)
 {
-    for(AbstractPlugin* plugin : m_qVecPlugins)
+    for(IPlugin* plugin : m_qVecPlugins)
     {
+        plugin->setGlobalSettings(settings);
         plugin->setGlobalData(data);
         plugin->init();
     }
@@ -130,7 +132,7 @@ void PluginManager::initPlugins(QSharedPointer<AnalyzeData> data)
 
 int PluginManager::findByName(const QString& name)
 {
-    QVector<AbstractPlugin*>::const_iterator it = m_qVecPlugins.begin();
+    QVector<IPlugin*>::const_iterator it = m_qVecPlugins.begin();
     for(int i = 0; it != m_qVecPlugins.end(); ++i, ++it)
         if((*it)->getName() == name)
             return i;
@@ -142,7 +144,7 @@ int PluginManager::findByName(const QString& name)
 
 void PluginManager::shutdown()
 {
-    for(AbstractPlugin* plugin : m_qVecPlugins)
+    for(IPlugin* plugin : m_qVecPlugins)
     {
         plugin->unload();
     }

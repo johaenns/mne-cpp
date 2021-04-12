@@ -99,6 +99,17 @@ EEGoSports::EEGoSports()
 , m_sNasion("0Z")
 , m_pCircularBuffer(QSharedPointer<CircularBuffer_Matrix_double>(new CircularBuffer_Matrix_double(10)))
 {
+    // Create record file option action bar item/button
+    m_pActionSetupProject = new QAction(QIcon(":/images/database.png"), tr("Setup project"), this);
+    m_pActionSetupProject->setStatusTip(tr("Setup project"));
+    connect(m_pActionSetupProject, &QAction::triggered, this, &EEGoSports::showSetupProjectDialog);
+    addPluginAction(m_pActionSetupProject);
+
+    // Create impedance action bar item/button
+    m_pActionImpedance = new QAction(QIcon(":/images/impedances.png"), tr("Check impedance values"), this);
+    m_pActionImpedance->setStatusTip(tr("Check impedance values"));
+    connect(m_pActionImpedance, &QAction::triggered, this, &EEGoSports::showImpedanceDialog);
+    addPluginAction(m_pActionImpedance);
 }
 
 //=============================================================================================================
@@ -113,7 +124,7 @@ EEGoSports::~EEGoSports()
 
 //=============================================================================================================
 
-QSharedPointer<AbstractPlugin> EEGoSports::clone() const
+QSharedPointer<IPlugin> EEGoSports::clone() const
 {
     QSharedPointer<EEGoSports> pEEGoSportsClone(new EEGoSports());
     return pEEGoSportsClone;
@@ -124,7 +135,7 @@ QSharedPointer<AbstractPlugin> EEGoSports::clone() const
 void EEGoSports::init()
 {
     m_pRMTSA_EEGoSports = PluginOutputData<RealTimeMultiSampleArray>::create(this, "EEGoSports", "EEG output data");
-    m_pRMTSA_EEGoSports->measurementData()->setName(this->getName());//Provide name to auto store widget settings
+    m_pRMTSA_EEGoSports->data()->setName(this->getName());//Provide name to auto store widget settings
 
     m_outputConnectors.append(m_pRMTSA_EEGoSports);
 
@@ -137,7 +148,7 @@ void EEGoSports::init()
     m_bWriteDriverDebugToFile = false;
     m_bCheckImpedances = false;
 
-    m_sElcFilePath = settings.value(QString("EEGOSPORTS/elcFilePath"), QString(QCoreApplication::applicationDirPath() + "resources/general/3DLayouts/standard_waveguard66.elc")).toString();
+    m_sElcFilePath = settings.value(QString("EEGOSPORTS/elcFilePath"), QString(QCoreApplication::applicationDirPath() + "/resources/3DLayouts/standard_waveguard64_duke.elc")).toString();
 
     m_sCardinalFilePath = settings.value(QString("EEGOSPORTS/cardinalFilePath"), QString("")).toString();
 
@@ -471,15 +482,9 @@ void EEGoSports::setUpFiffInfo()
             fChInfo.unit_mul = 0;
 
             //Set EEG electrode location - Convert from mm to m
-            if(refindex > -1) {
-                fChInfo.eeg_loc(0,0) = elcLocation3D[refindex][0]*0.001;
-                fChInfo.eeg_loc(1,0) = elcLocation3D[refindex][1]*0.001;
-                fChInfo.eeg_loc(2,0) = elcLocation3D[refindex][2]*0.001;
-            } else {
-                fChInfo.eeg_loc(0,0) = 0.0;
-                fChInfo.eeg_loc(1,0) = 0.0;
-                fChInfo.eeg_loc(2,0) = 0.0;
-            }
+            fChInfo.eeg_loc(0,0) = elcLocation3D[refindex][0]*0.001;
+            fChInfo.eeg_loc(1,0) = elcLocation3D[refindex][1]*0.001;
+            fChInfo.eeg_loc(2,0) = elcLocation3D[refindex][2]*0.001;
 
             //Set EEG electrode direction - Convert from mm to m
             fChInfo.eeg_loc(0,1) = center_pos.x()*0.001;
@@ -487,15 +492,9 @@ void EEGoSports::setUpFiffInfo()
             fChInfo.eeg_loc(2,1) = center_pos.z()*0.001;
 
             //Also write the eeg electrode locations into the meg loc variable (mne_ex_read_raw() matlab function wants this)
-            if(refindex > -1) {
-                fChInfo.chpos.r0(0) = elcLocation3D[refindex][0]*0.001;
-                fChInfo.chpos.r0(1) = elcLocation3D[refindex][1]*0.001;
-                fChInfo.chpos.r0(2) = elcLocation3D[refindex][2]*0.001;
-            } else {
-                fChInfo.chpos.r0(0) = 0.0;
-                fChInfo.chpos.r0(1) = 0.0;
-                fChInfo.chpos.r0(2) = 0.0;
-            }
+            fChInfo.chpos.r0(0) = elcLocation3D[refindex][0]*0.001;
+            fChInfo.chpos.r0(1) = elcLocation3D[refindex][1]*0.001;
+            fChInfo.chpos.r0(2) = elcLocation3D[refindex][2]*0.001;
 
             fChInfo.chpos.ex(0) = center_pos.x()*0.001;
             fChInfo.chpos.ex(1) = center_pos.y()*0.001;
@@ -549,15 +548,13 @@ bool EEGoSports::start()
         return false;
     }
 
-    if(!m_bCheckImpedances){
-        //Setup fiff info
-        setUpFiffInfo();
+    //Setup fiff info
+    setUpFiffInfo();
 
-        //Set the channel size of the RMTSA - this needs to be done here and NOT in the init() function because the user can change the number of channels during runtime
-        m_pRMTSA_EEGoSports->measurementData()->initFromFiffInfo(m_pFiffInfo);
-        m_pRMTSA_EEGoSports->measurementData()->setMultiArraySize(1);
-        m_pRMTSA_EEGoSports->measurementData()->setSamplingRate(m_iSamplingFreq);
-    }
+    //Set the channel size of the RMTSA - this needs to be done here and NOT in the init() function because the user can change the number of channels during runtime
+    m_pRMTSA_EEGoSports->data()->initFromFiffInfo(m_pFiffInfo);
+    m_pRMTSA_EEGoSports->data()->setMultiArraySize(1);
+    m_pRMTSA_EEGoSports->data()->setSamplingRate(m_iSamplingFreq);
 
     m_pEEGoSportsProducer->start(m_iSamplesPerBlock,
                                  m_iSamplingFreq,
@@ -583,26 +580,24 @@ bool EEGoSports::stop()
     //Stop the producer thread
     m_pEEGoSportsProducer->stop();
 
-    if(!m_bCheckImpedances){
-        // Clear all data in the buffer connected to displays and other plugins
-        m_pRMTSA_EEGoSports->measurementData()->clear();
-        m_pCircularBuffer->clear();
+    // Clear all data in the buffer connected to displays and other plugins
+    m_pRMTSA_EEGoSports->data()->clear();
+    m_pCircularBuffer->clear();
 
-        //Store settings for next use. Do this in stop() since it will crash if we do it in the destructor.
-        QSettings settings("MNECPP");
-        settings.setValue(QString("EEGOSPORTS/sFreq"), m_iSamplingFreq);
-        settings.setValue(QString("EEGOSPORTS/samplesPerBlock"), m_iSamplesPerBlock);
-        settings.setValue(QString("EEGOSPORTS/LPAShift"), m_dLPAShift);
-        settings.setValue(QString("EEGOSPORTS/RPAShift"), m_dRPAShift);
-        settings.setValue(QString("EEGOSPORTS/NasionShift"), m_dNasionShift);
-        settings.setValue(QString("EEGOSPORTS/LPAElectrode"), m_sLPA);
-        settings.setValue(QString("EEGOSPORTS/RPAElectrode"), m_sRPA);
-        settings.setValue(QString("EEGOSPORTS/NasionElectrode"), m_sNasion);
-        settings.setValue(QString("EEGOSPORTS/elcFilePath"), m_sElcFilePath);
-        settings.setValue(QString("EEGOSPORTS/cardinalFilePath"), m_sCardinalFilePath);
-        settings.setValue(QString("EEGOSPORTS/useTrackedCardinalsMode"), m_bUseTrackedCardinalMode);
-        settings.setValue(QString("EEGOSPORTS/useElectrodeshiftMode"), m_bUseElectrodeShiftMode);
-    }
+    //Store settings for next use. Do this in stop() since it will crash if we do it in the destructor.
+    QSettings settings("MNECPP");
+    settings.setValue(QString("EEGOSPORTS/sFreq"), m_iSamplingFreq);
+    settings.setValue(QString("EEGOSPORTS/samplesPerBlock"), m_iSamplesPerBlock);
+    settings.setValue(QString("EEGOSPORTS/LPAShift"), m_dLPAShift);
+    settings.setValue(QString("EEGOSPORTS/RPAShift"), m_dRPAShift);
+    settings.setValue(QString("EEGOSPORTS/NasionShift"), m_dNasionShift);
+    settings.setValue(QString("EEGOSPORTS/LPAElectrode"), m_sLPA);
+    settings.setValue(QString("EEGOSPORTS/RPAElectrode"), m_sRPA);
+    settings.setValue(QString("EEGOSPORTS/NasionElectrode"), m_sNasion);
+    settings.setValue(QString("EEGOSPORTS/elcFilePath"), m_sElcFilePath);
+    settings.setValue(QString("EEGOSPORTS/cardinalFilePath"), m_sCardinalFilePath);
+    settings.setValue(QString("EEGOSPORTS/useTrackedCardinalsMode"), m_bUseTrackedCardinalMode);
+    settings.setValue(QString("EEGOSPORTS/useElectrodeshiftMode"), m_bUseElectrodeShiftMode);
 
     return true;
 }
@@ -618,7 +613,7 @@ void EEGoSports::setSampleData(MatrixXd &matData)
 
 //=============================================================================================================
 
-AbstractPlugin::PluginType EEGoSports::getType() const
+IPlugin::PluginType EEGoSports::getType() const
 {
     return _ISensor;
 }
@@ -712,7 +707,7 @@ void EEGoSports::run()
                 if(m_pCircularBuffer->pop(matData)) {
                     //emit values to real time multi sample array
                     //qDebug()<<"EEGoSports::run - mat size"<<matValue.rows()<<"x"<<matValue.cols();
-                    m_pRMTSA_EEGoSports->measurementData()->setValue(matData);
+                    m_pRMTSA_EEGoSports->data()->setValue(matData);
                 }
             }      
         }

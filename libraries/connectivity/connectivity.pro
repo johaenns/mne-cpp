@@ -44,13 +44,13 @@ QT -= gui
 
 DEFINES += CONNECTIVITY_LIBRARY
 
-DESTDIR = $${MNE_LIBRARY_DIR}
-
 TARGET = Connectivity
 TARGET = $$join(TARGET,,mnecpp,)
 CONFIG(debug, debug|release) {
     TARGET = $$join(TARGET,,,d)
 }
+
+DESTDIR = $${MNE_LIBRARY_DIR}
 
 contains(MNECPP_CONFIG, static) {
     CONFIG += staticlib
@@ -124,10 +124,14 @@ contains(MNECPP_CONFIG, withCodeCov) {
 }
 
 win32:!contains(MNECPP_CONFIG, static) {
-    QMAKE_POST_LINK += $$QMAKE_COPY $$shell_path($${MNE_LIBRARY_DIR}/$${TARGET}.dll) $${MNE_BINARY_DIR}
+    # Deploy/Copy library to bin folder manually (windeployqt only takes care of qt and system libraries)
+    EXTRA_ARGS =
+    DEPLOY_CMD = $$winDeployLibArgs($${TARGET},$${MNE_BINARY_DIR},$${MNE_LIBRARY_DIR},$${EXTRA_ARGS})
+    QMAKE_POST_LINK += $${DEPLOY_CMD}
 }
 
 macx {
+    # Change install name of the library so we can use the @rpath when linking executables against it
     QMAKE_LFLAGS_SONAME = -Wl,-install_name,@rpath/
 }
 

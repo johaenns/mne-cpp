@@ -358,10 +358,3 @@ void ArtifactSettingsView::onChangeArtifactThreshold()
 
     saveSettings();
 }
-
-//=============================================================================================================
-
-void ArtifactSettingsView::clearView()
-{
-
-}

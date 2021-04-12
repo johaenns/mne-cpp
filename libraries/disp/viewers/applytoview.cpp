@@ -154,10 +154,3 @@ QList<QString> ApplyToView::getSelectedViews()
 
     return m_lViewList;
 }
-
-//=============================================================================================================
-
-void ApplyToView::clearView()
-{
-
-}

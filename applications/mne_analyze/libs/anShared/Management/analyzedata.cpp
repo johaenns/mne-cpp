@@ -5,13 +5,12 @@
  *           Lorenz Esch <lesch@mgh.harvard.edu>;
  *           Lars Debor <Lars.Debor@tu-ilmenau.de>;
  *           Simon Heinke <Simon.Heinke@tu-ilmenau.de>
- *           Gabriel Motta <gbmotta@mgh.harvard.edu>
  * @since    0.1.0
  * @date     February, 2017
  *
  * @section  LICENSE
  *
- * Copyright (C) 2017, Christoph Dinh, Lorenz Esch, Lars Debor, Simon Heinke, Gabriel Motta. All rights reserved.
+ * Copyright (C) 2017, Christoph Dinh, Lorenz Esch, Lars Debor, Simon Heinke. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without modification, are permitted provided that
  * the following conditions are met:
@@ -41,7 +40,6 @@
 //=============================================================================================================
 
 #include "analyzedata.h"
-#include <anShared/Management/communicator.h>
 
 //=============================================================================================================
 // QT INCLUDES
@@ -66,9 +64,9 @@ using namespace ANSHAREDLIB;
 
 AnalyzeData::AnalyzeData(QObject *pParent)
 : QObject(pParent)
-, m_pData(new DISPLIB::BidsViewModel(this))
+, m_pData(new AnalyzeDataModel(this))
 {
-    m_pCommu = new Communicator();
+
 }
 
 //=============================================================================================================
@@ -81,17 +79,19 @@ AnalyzeData::~AnalyzeData()
 
 QVector<QSharedPointer<AbstractModel> > AnalyzeData::getAllModels(QModelIndex parent) const
 {
-    QVector<QSharedPointer<AbstractModel> > lModels;
-    QList<QStandardItem*> lItemList;
+    QVector<QSharedPointer<AbstractModel> > lItems;
 
-    lItemList.append(getAllItems(parent));
+    for(int r = 0; r < m_pData->rowCount(parent); ++r) {
+        QModelIndex index = m_pData->index(r, 0, parent);
+        if(QSharedPointer<AbstractModel> pModel = m_pData->data(index).value<QSharedPointer<AbstractModel> >()) {
+            lItems.append(pModel);
+        }
 
-    for(QStandardItem* pItem : lItemList) {
-        if(QSharedPointer<AbstractModel> pModel = pItem->data().value<QSharedPointer<AbstractModel>>()) {
-            lModels.append(pModel);
+        if( m_pData->hasChildren(index) ) {
+            lItems.append(getAllModels(index));
+            return lItems;
         }
     }
-    return lModels;
 }
 
 //=============================================================================================================
@@ -99,19 +99,21 @@ QVector<QSharedPointer<AbstractModel> > AnalyzeData::getAllModels(QModelIndex pa
 QVector<QSharedPointer<AbstractModel> > AnalyzeData::getModelsByType(MODEL_TYPE mtype,
                                                                      QModelIndex parent) const
 {
-    QVector<QSharedPointer<AbstractModel> > lModels;
-    QList<QStandardItem*> lItemList;
+    QVector<QSharedPointer<AbstractModel> > lItems;
 
-    lItemList.append(getAllItems(parent));
-
-    for(QStandardItem* pItem : lItemList) {
-        if(QSharedPointer<AbstractModel> pModel = pItem->data().value<QSharedPointer<AbstractModel>>()) {
-            if (pModel->getType() == mtype){
-                lModels.append(pModel);
+    for(int r = 0; r < m_pData->rowCount(parent); ++r) {
+        QModelIndex index = m_pData->index(r, 0, parent);
+        if(QSharedPointer<AbstractModel> pModel = m_pData->data(index).value<QSharedPointer<AbstractModel> >()) {
+            if (pModel->getType() == mtype) {
+                lItems.append(pModel);
             }
         }
+
+        if( m_pData->hasChildren(index) ) {
+            lItems.append(getModelsByType(mtype, index));
+            return lItems;
+        }
     }
-    return lModels;
 }
 
 //=============================================================================================================
@@ -132,15 +134,18 @@ QSharedPointer<AbstractModel> AnalyzeData::getModelByName(const QString &sName) 
 QSharedPointer<AbstractModel> AnalyzeData::getModelByPath(const QString& sPath,
                                                           QModelIndex parent) const
 {
-    QList<QStandardItem*> lItemList;
-
-    lItemList.append(getAllItems(parent));
-
-    for(QStandardItem* pItem : lItemList) {
-        if(QSharedPointer<AbstractModel> pModel = pItem->data().value<QSharedPointer<AbstractModel>>()) {
-            if(pItem->toolTip() == sPath){
-                return pModel;
+    for(int r = 0; r < m_pData->rowCount(parent); ++r) {
+        QModelIndex index = m_pData->index(r, 0, parent);
+        if(QStandardItem* pItem = m_pData->itemFromIndex(index)) {
+            if (pItem->toolTip() == sPath) {
+                if(QSharedPointer<AbstractModel> pModel = pItem->data().value<QSharedPointer<AbstractModel> >()) {
+                    return pModel;
+                }
             }
+        }
+
+        if(m_pData->hasChildren(index)) {
+            return getModelByPath(sPath, index);
         }
     }
 
@@ -158,54 +163,45 @@ QStandardItemModel* AnalyzeData::getDataModel()
 
 bool AnalyzeData::removeModel(const QModelIndex& index)
 {
-    QVector<QSharedPointer<AbstractModel>> lModels = getAllModels(index);
+    if(QStandardItem* pItem = m_pData->itemFromIndex(index)) {
+        QString sModelPath = pItem->toolTip();
+        QFileInfo info (sModelPath);
 
-    for (QSharedPointer<AbstractModel> pModel : lModels){
-        m_pCommu->publishEvent(EVENT_TYPE::MODEL_REMOVED, QVariant::fromValue(pModel));
-    }
+        QMessageBox msgBox;
+        msgBox.setText("Are you sure you want to remove "+info.fileName()+"?");
+        msgBox.setStandardButtons(QMessageBox::Yes | QMessageBox::No);
+        msgBox.setDefaultButton(QMessageBox::No);
+        int ret = msgBox.exec();
 
-    QStandardItem* pItem = m_pData->itemFromIndex(index);
-    m_pCommu->publishEvent(EVENT_TYPE::MODEL_REMOVED, QVariant::fromValue(pItem->data().value<QSharedPointer<AbstractModel>>()));
-
-    return m_pData->removeItem(index);
-}
-
-//=============================================================================================================
-
-QStandardItem* AnalyzeData::addSubject(const QString &sSubjectName)
-{
-    return m_pData->itemFromIndex(m_pData->addSubject(sSubjectName));
-}
-
-//=============================================================================================================
-
-void AnalyzeData::newSelection(const QModelIndex &index)
-{
-    switch(m_pData->itemFromIndex(index)->data(BIDS_ITEM_TYPE).value<int>()){
-        case BIDS_UNKNOWN:
-        case BIDS_FUNCTIONALDATA:
-            m_SelectedFunctionalData = index;
-            m_SelectedItem = index;
-            break;
-        default:
-            m_SelectedItem = index;
-            break;
-    }
-}
-
-//=============================================================================================================
-
-QList<QStandardItem*> AnalyzeData::getAllItems(QModelIndex parent) const
-{
-    QList<QStandardItem*> lItemList;
-
-    for(int iRow = 0; iRow < m_pData->rowCount(parent); ++iRow) {
-        QModelIndex index = m_pData->index(iRow, 0, parent);
-        lItemList.append(m_pData->itemFromIndex(index));
-        if( m_pData->hasChildren(index) ) {
-            lItemList.append(getAllItems(index));
+        if(ret == QMessageBox::Yes) {
+            // Check if the parent of the deleted item holds any other data. If not delete it as well.
+            if(QStandardItem* pItemParent = m_pData->itemFromIndex(index.parent())) {
+                if(pItemParent->rowCount() <= 1) {
+                    if(m_pData->removeRows(index.parent().row(), 1)) {
+                        if(m_pData->rowCount() == 0) {
+                            emit modelIsEmpty();
+                        }
+                        qInfo() << "[AnalyzeData::removeModel] Removed model and parent at index" << index;
+                        return true;
+                    } else {
+                        qInfo() << "[AnalyzeData::removeModel] Could not remove model and parent at index" << index;
+                        return false;
+                    }
+                } else {
+                    if(m_pData->removeRows(index.row(), 1, index.parent())) {
+                        if(m_pData->rowCount() == 0) {
+                            emit modelIsEmpty();
+                        }
+                        qInfo() << "[AnalyzeData::removeModel] Removed model at index" << index;
+                        return true;
+                    } else {
+                        qInfo() << "[AnalyzeData::removeModel] Could not remove model at index" << index;
+                        return false;
+                    }
+                }
+            }
         }
     }
 
-    return lItemList;
+    return false;
 }

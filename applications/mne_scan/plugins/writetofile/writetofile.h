@@ -42,7 +42,7 @@
 #include "writetofile_global.h"
 
 #include <utils/generics/circularbuffer.h>
-#include <scShared/Plugins/abstractalgorithm.h>
+#include <scShared/Interfaces/IAlgorithm.h>
 
 //=============================================================================================================
 // QT INCLUDES
@@ -91,12 +91,12 @@ namespace WRITETOFILEPLUGIN
  *
  * @brief The WriteToFile class provides a tools to reduce noise of an incoming data stream. It then forwards the processed data to subsequent plugins.
  */
-class WRITETOFILESHARED_EXPORT WriteToFile : public SCSHAREDLIB::AbstractAlgorithm
+class WRITETOFILESHARED_EXPORT WriteToFile : public SCSHAREDLIB::IAlgorithm
 {
     Q_OBJECT
     Q_PLUGIN_METADATA(IID "scsharedlib/1.0" FILE "writetofile.json") //New Qt5 Plugin system replaces Q_EXPORT_PLUGIN2 macro
     // Use the Q_INTERFACES() macro to tell Qt's meta-object system about the interfaces
-    Q_INTERFACES(SCSHAREDLIB::AbstractAlgorithm)
+    Q_INTERFACES(SCSHAREDLIB::IAlgorithm)
 
 public:
     //=========================================================================================================
@@ -113,14 +113,14 @@ public:
 
     //=========================================================================================================
     /**
-     * AbstractAlgorithm functions
+     * IAlgorithm functions
      */
-    virtual QSharedPointer<SCSHAREDLIB::AbstractPlugin> clone() const;
+    virtual QSharedPointer<SCSHAREDLIB::IPlugin> clone() const;
     virtual void init();
     virtual void unload();
     virtual bool start();
     virtual bool stop();
-    virtual AbstractPlugin::PluginType getType() const;
+    virtual IPlugin::PluginType getType() const;
     virtual QString getName() const;
     virtual QWidget* setupWidget();
 
@@ -141,7 +141,7 @@ public:
 private:
     //=========================================================================================================
     /**
-     * AbstractAlgorithm function
+     * IAlgorithm function
      */
     virtual void run();
 
@@ -212,8 +212,6 @@ private:
     QSharedPointer<UTILSLIB::CircularBuffer_Matrix_double>                      m_pCircularBuffer;      /**< Holds incoming raw data. */
 
     SCSHAREDLIB::PluginInputData<SCMEASLIB::RealTimeMultiSampleArray>::SPtr      m_pWriteToFileInput;   /**< The RealTimeMultiSampleArray of the WriteToFile input.*/
-
-    Eigen::RowVectorXd                      m_mCals;                        /**< Row vector with channel calibration values. */
 };
 } // NAMESPACE
 

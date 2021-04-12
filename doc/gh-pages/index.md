@@ -4,8 +4,6 @@ has_children: true
 nav_order: 1
 ---
 
-# The MNE-CPP Project
-
 ![A framework for electrophysiology](images/partners.png)
 
 <html>

@@ -37,18 +37,17 @@ include(../../../../mne-cpp.pri)
 
 TEMPLATE = lib
 
-QT += widgets svg
-
 CONFIG += skip_target_version_ext
 
-DEFINES += ANSHARED_LIBRARY
+QT += widgets svg
 
-DESTDIR = $${MNE_LIBRARY_DIR}
+DEFINES += ANSHARED_LIBRARY
 
 TARGET = anShared
 CONFIG(debug, debug|release) {
     TARGET = $$join(TARGET,,,d)
 }
+DESTDIR = $${MNE_LIBRARY_DIR}
 
 contains(MNECPP_CONFIG, wasm) {
     DEFINES += WASMBUILD
@@ -84,38 +83,33 @@ CONFIG(debug, debug|release) {
 
 SOURCES += \
     Management/analyzedata.cpp \
+    Management/analyzesettings.cpp \
     Management/pluginmanager.cpp \
     Management/event.cpp \
     Management/communicator.cpp \
     Management/eventmanager.cpp \
     Management/statusbar.cpp \
-    Model/bemdatamodel.cpp \
-    Model/dipolefitmodel.cpp \
     Model/fiffrawviewmodel.cpp \
     Model/annotationmodel.cpp \
-    Model/averagingdatamodel.cpp \
-    Model/mricoordmodel.cpp \
-    Model/covariancemodel.cpp
+    Model/analyzedatamodel.cpp \
 
 HEADERS += \
-    Model/dipolefitmodel.h \
-    Model/mricoordmodel.h \
-    Model/covariancemodel.h \
-    Plugins/abstractplugin.h \
     anshared_global.h \
     Model/abstractmodel.h \
     Management/analyzedata.h \
+    Management/analyzesettings.h \
     Management/pluginmanager.h \
     Management/event.h \
     Management/communicator.h \
     Management/eventmanager.h \
     Management/statusbar.h \
+    Interfaces/IStandardView.h \
+    Interfaces/IPlugin.h \
     Utils/metatypes.h \
     Utils/types.h \
-    Model/bemdatamodel.h \
     Model/fiffrawviewmodel.h \
     Model/annotationmodel.h \
-    Model/averagingdatamodel.h \
+    Model/analyzedatamodel.h \
 
 INCLUDEPATH += $${EIGEN_INCLUDE_DIR}
 INCLUDEPATH += $${MNE_INCLUDE_DIR}
@@ -127,12 +121,20 @@ header_files.path = $${MNE_INSTALL_INCLUDE_DIR}/anShared
 
 INSTALLS += header_files
 
+
+
+DISTFILES += \
+    Model/fiffrawmodel
+
 win32:!contains(MNECPP_CONFIG, static) {
-    QMAKE_POST_LINK += $$QMAKE_COPY $$shell_path($${MNE_LIBRARY_DIR}/$${TARGET}.dll) $${MNE_BINARY_DIR}
+# Deploy/Copy library to bin folder manually (windeployqt only takes care of qt and system libraries)
+    EXTRA_ARGS =
+    DEPLOY_CMD = $$winDeployLibArgs($${TARGET},$${MNE_BINARY_DIR},$${MNE_LIBRARY_DIR},$${EXTRA_ARGS})
+    QMAKE_POST_LINK += $${DEPLOY_CMD}
 }
 
 macx {
-    QMAKE_LFLAGS_SONAME = -Wl,-install_name,@rpath/
+    QMAKE_LFLAGS += -Wl,-rpath,../lib
 }
 
 # Activate FFTW backend in Eigen for non-static builds only

@@ -241,10 +241,3 @@ void CompensatorView::onCheckCompStatusChanged()
 
    saveSettings();
 }
-
-//=============================================================================================================
-
-void CompensatorView::clearView()
-{
-
-}

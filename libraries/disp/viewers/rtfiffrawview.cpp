@@ -58,7 +58,7 @@
 #include <QScrollBar>
 #include <QMouseEvent>
 
-#if !defined(NO_QOPENGLWIDGET)
+#if !defined(NO_OPENGL)
     #include <QOpenGLWidget>
 #endif
 
@@ -88,7 +88,7 @@ RtFiffRawView::RtFiffRawView(const QString& sSettingsPath,
     m_sSettingsPath = sSettingsPath;
     m_pTableView = new QTableView;
 
-#if !defined(NO_QOPENGLWIDGET)
+#if !defined(NO_OPENGL)
     m_pTableView->setViewport(new QOpenGLWidget);
 #endif
 
@@ -116,7 +116,7 @@ RtFiffRawView::~RtFiffRawView()
 
 void RtFiffRawView::updateOpenGLViewport()
 {
-#if !defined(NO_QOPENGLWIDGET)
+#if !defined(NO_OPENGL)
     if(m_pTableView) {
         m_pTableView->setViewport(new QOpenGLWidget);
     }
@@ -682,11 +682,4 @@ void RtFiffRawView::markChBad()
     }
 
     emit channelMarkingChanged();
-}
-
-//=============================================================================================================
-
-void RtFiffRawView::clearView()
-{
-
 }
